@@ -5,6 +5,56 @@
 {% block page_subtitle %}<p class="page-subtitle">Your accounts are secure and up to date.</p>{% endblock %}
 
 {% block content %}
+    <section class="card-stage" id="cardStage">
+        <div class="floating-card ghost-card ghost-card-back" aria-hidden="true"></div>
+        <div class="floating-card ghost-card ghost-card-mid" aria-hidden="true"></div>
+        <article class="bank-card" id="bankCard" aria-label="Debit card">
+            <div class="bank-card-top">
+                <div>
+                    <p class="bank-card-brand">CHASE SECURE</p>
+                    <p class="bank-card-type">Debit</p>
+                </div>
+                <div class="bank-card-chip"></div>
+            </div>
+            <div class="bank-card-number" id="cardNumberDisplay">4921 6620 1948 1203</div>
+            <div class="bank-card-footer">
+                <div>
+                    <p class="bank-card-caption">Cardholder</p>
+                    <p class="bank-card-name" id="cardNameDisplay">JORDAN BANKS</p>
+                </div>
+                <div>
+                    <p class="bank-card-caption">Exp</p>
+                    <p class="bank-card-expiry">08/29</p>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Card controls</p>
+                <h2 class="section-title">Customize your card</h2>
+            </div>
+            <button class="secondary-button" type="button" id="toggleCardNumber">Hide number</button>
+        </div>
+
+        <div class="card-editor-grid">
+            <div class="field-group">
+                <label class="field-label" for="cardNumberInput">Card number</label>
+                <input id="cardNumberInput" type="text" inputmode="numeric" maxlength="19" value="4921 6620 1948 1203">
+            </div>
+            <div class="field-group">
+                <label class="field-label" for="cardNameInput">Cardholder name</label>
+                <input id="cardNameInput" type="text" maxlength="26" value="JORDAN BANKS">
+            </div>
+        </div>
+
+        <div class="info-strip">
+            <p>Drag the card above to reposition it. Your card details stay saved on this device.</p>
+        </div>
+    </section>
+
     <section class="hero-card">
         <div class="hero-copy">
             <p class="hero-label">Total available</p>
@@ -62,30 +112,19 @@
                 <p class="section-label">Recent activity</p>
                 <h2 class="section-title">Latest transactions</h2>
             </div>
+            <a href="/transactions" class="text-link">See all</a>
         </div>
 
         <div class="activity-list">
-            <div class="activity-item">
-                <div>
-                    <p class="activity-title">Payroll deposit</p>
-                    <p class="activity-subtitle">Today, 8:10 AM</p>
+            {% for tx in transactions %}
+                <div class="activity-item">
+                    <div>
+                        <p class="activity-title">{{ tx.title }}</p>
+                        <p class="activity-subtitle">{{ tx.subtitle }}</p>
+                    </div>
+                    <p class="activity-amount {% if tx.positive %}positive{% endif %}">{{ tx.amount }}</p>
                 </div>
-                <p class="activity-amount positive">+$2,450.00</p>
-            </div>
-            <div class="activity-item">
-                <div>
-                    <p class="activity-title">Electric utility</p>
-                    <p class="activity-subtitle">Yesterday, 6:42 PM</p>
-                </div>
-                <p class="activity-amount">-$84.17</p>
-            </div>
-            <div class="activity-item">
-                <div>
-                    <p class="activity-title">Card purchase</p>
-                    <p class="activity-subtitle">Yesterday, 1:15 PM</p>
-                </div>
-                <p class="activity-amount">-$19.48</p>
-            </div>
+            {% endfor %}
         </div>
     </section>
 {% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions | Chase Secure{% endblock %}
+{% block page_title %}Transactions{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Review recent account activity and posted deposits.</p>{% endblock %}
+
+{% block content %}
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Checking ending in 1203</p>
+                <h2 class="section-title">Recent activity</h2>
+            </div>
+            <p class="section-amount">${{ "%.2f"|format(balance) }}</p>
+        </div>
+
+        <div class="transaction-filter-row">
+            <span class="filter-pill active">All</span>
+            <span class="filter-pill">Deposits</span>
+            <span class="filter-pill">Card</span>
+            <span class="filter-pill">Transfers</span>
+        </div>
+
+        <div class="activity-list">
+            {% for tx in transactions %}
+                <div class="activity-item rich-item">
+                    <div class="transaction-leading">{{ tx.category[0] }}</div>
+                    <div class="transaction-body">
+                        <p class="activity-title">{{ tx.title }}</p>
+                        <p class="activity-subtitle">{{ tx.subtitle }}</p>
+                    </div>
+                    <p class="activity-amount {% if tx.positive %}positive{% endif %}">{{ tx.amount }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}

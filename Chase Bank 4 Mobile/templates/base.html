@@ -35,6 +35,17 @@
         </section>
 
         {% block content %}{% endblock %}
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a href="/" class="bottom-nav-link {% if active_page == 'accounts' %}active{% endif %}">
+                <span class="bottom-nav-icon">A</span>
+                <span>Accounts</span>
+            </a>
+            <a href="/transactions" class="bottom-nav-link {% if active_page == 'transactions' %}active{% endif %}">
+                <span class="bottom-nav-icon">T</span>
+                <span>Transactions</span>
+            </a>
+        </nav>
     </div>
 
     <script src="/static/script.js"></script>

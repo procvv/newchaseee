@@ -7,10 +7,18 @@ from flask import Flask, redirect, render_template, request, send_from_directory
 app = Flask(__name__)
 
 balance = 255.00
+transactions = [
+    {"title": "Payroll deposit", "subtitle": "Today, 8:10 AM", "amount": "+$2,450.00", "positive": True, "category": "Income"},
+    {"title": "Electric utility", "subtitle": "Yesterday, 6:42 PM", "amount": "-$84.17", "positive": False, "category": "Bills"},
+    {"title": "Card purchase", "subtitle": "Yesterday, 1:15 PM", "amount": "-$19.48", "positive": False, "category": "Shopping"},
+    {"title": "Coffee shop", "subtitle": "Monday, 9:03 AM", "amount": "-$6.85", "positive": False, "category": "Food"},
+    {"title": "Cash App transfer", "subtitle": "Sunday, 4:21 PM", "amount": "-$120.00", "positive": False, "category": "Transfer"},
+    {"title": "ATM deposit", "subtitle": "Saturday, 11:11 AM", "amount": "+$300.00", "positive": True, "category": "Deposit"},
+]
 
 @app.route("/")
 def home():
-    return render_template("home.html", balance=balance)
+    return render_template("home.html", balance=balance, transactions=transactions[:3], active_page="accounts")
 
 @app.route("/deposit", methods=["GET", "POST"])
 def deposit():
@@ -19,7 +27,7 @@ def deposit():
         amount = float(request.form["amount"])
         balance += amount
         return redirect(f"/receipt?amount={amount}")
-    return render_template("deposit.html")
+    return render_template("deposit.html", active_page="accounts")
 
 @app.route("/receipt")
 def receipt():
@@ -32,7 +40,13 @@ def receipt():
                            amount=amount,
                            date=now.strftime("%m/%d/%Y %H:%M"),
                            last4=last4,
-                           tx_id=tx_id)
+                           tx_id=tx_id,
+                           active_page="accounts")
+
+
+@app.route("/transactions")
+def transactions_page():
+    return render_template("transactions.html", transactions=transactions, balance=balance, active_page="transactions")
 
 
 @app.route("/healthz")
