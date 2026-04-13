@@ -15,7 +15,7 @@ transactions = [
     {"title": "Cash App transfer", "subtitle": "Sunday, 4:21 PM", "amount": "-$120.00", "positive": False, "category": "Transfer"},
     {"title": "ATM deposit", "subtitle": "Saturday, 11:11 AM", "amount": "+$300.00", "positive": True, "category": "Deposit"},
 ]
-app_name = "Northstar Demo"
+app_name = "Northstar Bank"
 
 @app.route("/")
 def home():
@@ -37,7 +37,7 @@ def deposit():
                 "deposit.html",
                 active_page="accounts",
                 app_name=app_name,
-                error="Add a sample check photo to continue.",
+                error="Add a check photo to continue.",
                 form_data=request.form
             )
         balance += amount
@@ -78,7 +78,7 @@ def receipt():
     last4 = request.args.get("last4") or random.randint(1000, 9999)
     tx_id = random.randint(100000000000, 999999999999)
     source = request.args.get("source", "deposit")
-    holder_name = request.args.get("holder_name", "Sample User")
+    holder_name = request.args.get("holder_name", "Holder Name")
 
     return render_template("receipt.html",
                            amount=amount,
