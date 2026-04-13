@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Profile & Settings | {{ app_name }}{% endblock %}
+{% block page_title %}Profile & Settings{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Manage security preferences, notifications, and your app experience on this device.</p>{% endblock %}
+
+{% block content %}
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Profile</p>
+                <h2 class="section-title">Jordan Banks</h2>
+            </div>
+            <div class="profile-avatar">JB</div>
+        </div>
+
+        <div class="profile-grid">
+            <div class="profile-stat">
+                <p class="stat-label">Member since</p>
+                <p class="stat-value">2024</p>
+            </div>
+            <div class="profile-stat">
+                <p class="stat-label">Security level</p>
+                <p class="stat-value">High</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Security</p>
+                <h2 class="section-title">Quick unlock</h2>
+            </div>
+        </div>
+
+        <button class="settings-toggle" type="button" id="faceIdToggle" aria-pressed="false">
+            <span>
+                <strong>Face ID quick unlock</strong>
+                <small>Require a biometric-style unlock when opening the app on this device.</small>
+            </span>
+            <span class="toggle-pill" id="faceIdTogglePill">
+                <span class="toggle-knob"></span>
+            </span>
+        </button>
+
+        <div class="info-strip">
+            <p id="faceIdStatusCopy">Face ID quick unlock is currently off for this device.</p>
+        </div>
+    </section>
+
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Preferences</p>
+                <h2 class="section-title">App settings</h2>
+            </div>
+        </div>
+
+        <div class="settings-list">
+            <div class="settings-item">
+                <div>
+                    <p class="mini-action-label">Push notifications</p>
+                    <p class="mini-action-copy">Deposit alerts, card activity, and account reminders.</p>
+                </div>
+                <span class="settings-value">On</span>
+            </div>
+            <div class="settings-item">
+                <div>
+                    <p class="mini-action-label">Appearance</p>
+                    <p class="mini-action-copy">Automatically follows your phone's light or dark mode.</p>
+                </div>
+                <span class="settings-value">Auto</span>
+            </div>
+            <div class="settings-item">
+                <div>
+                    <p class="mini-action-label">App version</p>
+                    <p class="mini-action-copy">Northstar mobile experience for this browser.</p>
+                </div>
+                <span class="settings-value">v1.0</span>
+            </div>
+        </div>
+    </section>
+{% endblock %}

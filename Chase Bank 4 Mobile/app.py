@@ -96,6 +96,11 @@ def transactions_page():
     return render_template("transactions.html", transactions=transactions, balance=balance, active_page="transactions", app_name=app_name)
 
 
+@app.route("/profile")
+def profile_page():
+    return render_template("profile.html", active_page="profile", app_name=app_name)
+
+
 @app.route("/healthz")
 def healthz():
     return {"status": "ok"}, 200

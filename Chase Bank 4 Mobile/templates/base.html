@@ -15,8 +15,19 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
+<body data-app-name="{{ app_name }}">
     <div class="container app-shell">
+        <section class="face-id-overlay is-hidden" id="faceIdOverlay" aria-live="polite">
+            <div class="face-id-card">
+                <div class="face-id-icon" id="faceIdIcon">ID</div>
+                <p class="section-label">Security</p>
+                <h2 class="section-title">Face ID</h2>
+                <p class="face-id-copy" id="faceIdCopy">Unlock {{ app_name }} with Face ID on this device.</p>
+                <button class="button" type="button" id="faceIdUnlockButton">Use Face ID</button>
+                <button class="text-button" type="button" id="faceIdCancelButton">Use app without Face ID</button>
+            </div>
+        </section>
+
         <header class="app-topbar">
             <div>
                 <p class="eyebrow">{{ app_name }}</p>
@@ -48,6 +59,10 @@
             <a href="/transactions" class="bottom-nav-link {% if active_page == 'transactions' %}active{% endif %}">
                 <span class="bottom-nav-icon">T</span>
                 <span>Transactions</span>
+            </a>
+            <a href="/profile" class="bottom-nav-link {% if active_page == 'profile' %}active{% endif %}">
+                <span class="bottom-nav-icon">P</span>
+                <span>Profile</span>
             </a>
         </nav>
     </div>

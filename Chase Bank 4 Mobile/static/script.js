@@ -4,6 +4,8 @@ const installHelp = document.getElementById("installHelp");
 const themeColorMeta = document.getElementById("themeColorMeta");
 const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 const storageKey = "chase-secure-card";
+const faceIdEnabledKey = "northstar-face-id-enabled";
+const faceIdUnlockedKey = "northstar-face-id-unlocked";
 let deferredPrompt = null;
 const cardThemes = [
     { network: "Aurora", start: "#071a33", mid: "#0c4fa7", end: "#2c7ef0", glow: "rgba(255, 255, 255, 0.26)" },
@@ -50,6 +52,8 @@ function isIosSafari() {
 }
 
 function registerInstallFlow() {
+    const appName = document.body.dataset.appName || "this app";
+
     if (isStandalone()) {
         return;
     }
@@ -61,7 +65,7 @@ function registerInstallFlow() {
     window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         deferredPrompt = event;
-        showInstallBanner("Install Chase Secure for a full-screen home-screen experience.", true);
+        showInstallBanner(`Install ${appName} for a full-screen home-screen experience.`, true);
     });
 
     window.addEventListener("appinstalled", () => {
@@ -353,8 +357,89 @@ function registerServiceWorker() {
     });
 }
 
+function isFaceIdEnabled() {
+    return localStorage.getItem(faceIdEnabledKey) === "true";
+}
+
+function setFaceIdEnabled(enabled) {
+    localStorage.setItem(faceIdEnabledKey, enabled ? "true" : "false");
+    if (!enabled) {
+        sessionStorage.removeItem(faceIdUnlockedKey);
+    }
+}
+
+function setFaceIdToggleState(enabled) {
+    const toggle = document.getElementById("faceIdToggle");
+    const copy = document.getElementById("faceIdStatusCopy");
+
+    if (!toggle || !copy) {
+        return;
+    }
+
+    toggle.classList.toggle("is-on", enabled);
+    toggle.setAttribute("aria-pressed", enabled ? "true" : "false");
+    copy.textContent = enabled
+        ? "Face ID quick unlock is currently on for this device."
+        : "Face ID quick unlock is currently off for this device.";
+}
+
+function setupProfileSettings() {
+    const toggle = document.getElementById("faceIdToggle");
+
+    if (!toggle) {
+        return;
+    }
+
+    setFaceIdToggleState(isFaceIdEnabled());
+
+    toggle.addEventListener("click", () => {
+        const nextValue = !isFaceIdEnabled();
+        setFaceIdEnabled(nextValue);
+        setFaceIdToggleState(nextValue);
+    });
+}
+
+function setupFaceIdOverlay() {
+    const overlay = document.getElementById("faceIdOverlay");
+    const unlockButton = document.getElementById("faceIdUnlockButton");
+    const cancelButton = document.getElementById("faceIdCancelButton");
+    const copy = document.getElementById("faceIdCopy");
+    const icon = document.getElementById("faceIdIcon");
+    const appName = document.body.dataset.appName || "this app";
+
+    if (!overlay || !unlockButton || !cancelButton || !copy || !icon) {
+        return;
+    }
+
+    if (!isFaceIdEnabled() || sessionStorage.getItem(faceIdUnlockedKey) === "true") {
+        return;
+    }
+
+    document.body.classList.add("face-id-locked");
+    overlay.classList.remove("is-hidden");
+    copy.textContent = `Unlock ${appName} with Face ID on this device.`;
+
+    unlockButton.addEventListener("click", async () => {
+        unlockButton.disabled = true;
+        icon.textContent = "...";
+        copy.textContent = "Checking Face ID...";
+        await new Promise((resolve) => window.setTimeout(resolve, 900));
+        sessionStorage.setItem(faceIdUnlockedKey, "true");
+        overlay.classList.add("is-hidden");
+        document.body.classList.remove("face-id-locked");
+    });
+
+    cancelButton.addEventListener("click", () => {
+        sessionStorage.setItem(faceIdUnlockedKey, "true");
+        overlay.classList.add("is-hidden");
+        document.body.classList.remove("face-id-locked");
+    });
+}
+
 registerThemeListener();
 registerInstallFlow();
 setupCardPreview();
 setupInteractiveCard();
+setupProfileSettings();
+setupFaceIdOverlay();
 registerServiceWorker();
