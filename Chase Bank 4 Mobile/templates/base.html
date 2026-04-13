@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}Chase Secure{% endblock %}</title>
-    <meta name="theme-color" content="#0a3d91">
+    <meta name="theme-color" content="#f3f7fc" id="themeColorMeta">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -21,8 +21,9 @@
             <div>
                 <p class="eyebrow">Chase Secure</p>
                 <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+                {% block page_subtitle %}{% endblock %}
             </div>
-            <button class="icon-button" type="button" onclick="toggleDark()" aria-label="Toggle dark mode">Mode</button>
+            <div class="brand-mark" aria-hidden="true">C</div>
         </header>
 
         <section class="install-banner is-hidden" id="installBanner" aria-live="polite">
