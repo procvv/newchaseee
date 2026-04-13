@@ -2,7 +2,7 @@
 
 {% block title %}Receipt | {{ app_name }}{% endblock %}
 {% block page_title %}Activity submitted{% endblock %}
-{% block page_subtitle %}<p class="page-subtitle">Your demo transaction was recorded successfully.</p>{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Your transaction was recorded successfully.</p>{% endblock %}
 
 {% block content %}
     <section class="card receipt-card section-card">
@@ -12,7 +12,7 @@
             {% if source == 'card' %}
                 Added from card ending in {{ last4 }}
             {% else %}
-                Sample check deposit to checking ending in {{ last4 }}
+                Check deposit to checking ending in {{ last4 }}
             {% endif %}
         </p>
 
@@ -31,7 +31,7 @@
             </div>
             <div class="detail-row">
                 <span class="detail-label">{% if source == 'card' %}Cardholder{% else %}Account{% endif %}</span>
-                <span class="detail-value">{% if source == 'card' %}{{ holder_name }}{% else %}Checking •••• {{ last4 }}{% endif %}</span>
+                <span class="detail-value">{% if source == 'card' %}{{ holder_name }}{% else %}Checking **** {{ last4 }}{% endif %}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Transaction ID</span>

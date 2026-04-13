@@ -12,7 +12,7 @@
             <div class="bank-card-top">
                 <div>
                     <p class="bank-card-brand">{{ app_name }}</p>
-                    <p class="bank-card-type">Debit</p>
+                    <p class="bank-card-type" id="cardNetworkDisplay">Aurora</p>
                 </div>
                 <div class="bank-card-chip"></div>
             </div>
@@ -24,7 +24,7 @@
                 </div>
                 <div>
                     <p class="bank-card-caption">Exp</p>
-                    <p class="bank-card-expiry">08/29</p>
+                    <p class="bank-card-expiry" id="cardExpiryDisplay">08/29</p>
                 </div>
             </div>
         </article>
@@ -51,7 +51,7 @@
         </div>
 
         <div class="info-strip">
-            <p>Drag the card above to reposition it. Your card details stay saved on this device.</p>
+            <p>Each device gets its own saved card style. Drag the card above to reposition it.</p>
         </div>
     </section>
 {% endblock %}

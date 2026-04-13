@@ -215,6 +215,10 @@ body {
 }
 
 .bank-card {
+    --card-start: #071a33;
+    --card-mid: #0c4fa7;
+    --card-end: #2c7ef0;
+    --card-glow: rgba(255, 255, 255, 0.26);
     top: 42px;
     left: 28px;
     display: flex;
@@ -226,8 +230,8 @@ body {
     user-select: none;
     touch-action: none;
     background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.26), transparent 26%),
-        linear-gradient(135deg, #071a33, #0c4fa7 68%, #2c7ef0);
+        radial-gradient(circle at top right, var(--card-glow), transparent 26%),
+        linear-gradient(135deg, var(--card-start), var(--card-mid) 68%, var(--card-end));
     transition: transform 180ms ease, box-shadow 180ms ease;
     animation: floatCard 5s ease-in-out infinite;
 }

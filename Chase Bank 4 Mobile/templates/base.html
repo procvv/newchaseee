@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="{{ app_name }}">
-    <meta name="description" content="A fictional finance demo app that can be installed to your home screen.">
+    <meta name="description" content="A fictional finance app that can be installed to your home screen.">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
@@ -26,14 +26,10 @@
             <div class="brand-mark" aria-hidden="true">C</div>
         </header>
 
-        <section class="demo-banner">
-            <p>Demo app. Use sample details only.</p>
-        </section>
-
         <section class="install-banner is-hidden" id="installBanner" aria-live="polite">
             <div>
                 <p class="install-title">Install this app</p>
-                <p class="install-copy" id="installHelp">Save Chase Secure to your home screen for a full-screen mobile launch.</p>
+                <p class="install-copy" id="installHelp">Save {{ app_name }} to your home screen for a full-screen mobile launch.</p>
             </div>
             <button class="install-button" type="button" id="installButton">Install</button>
         </section>

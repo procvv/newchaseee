@@ -2,7 +2,7 @@
 
 {% block title %}Add Money | {{ app_name }}{% endblock %}
 {% block page_title %}Add money{% endblock %}
-{% block page_subtitle %}<p class="page-subtitle">Demo card funding flow with sample validation for a 16-digit card number.</p>{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Card funding flow with validation for an exact 16-digit card number.</p>{% endblock %}
 
 {% block content %}
     <section class="card section-card">
@@ -41,11 +41,11 @@
 
             <div class="field-group">
                 <label class="field-label" for="holder_name">Cardholder name</label>
-                <input id="holder_name" type="text" maxlength="32" name="holder_name" placeholder="Sample User" value="{{ form_data.get('holder_name', '') }}" required>
+                <input id="holder_name" type="text" maxlength="32" name="holder_name" placeholder="Holder Name" value="{{ form_data.get('holder_name', '') }}" required>
             </div>
 
             <div class="info-strip">
-                <p>This is a demo form. Enter sample values only.</p>
+                <p>Enter values as needed. The card number must be exactly 16 digits.</p>
             </div>
 
             <button class="button" type="submit">Add money</button>

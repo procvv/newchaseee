@@ -5,6 +5,20 @@ const themeColorMeta = document.getElementById("themeColorMeta");
 const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 const storageKey = "chase-secure-card";
 let deferredPrompt = null;
+const cardThemes = [
+    { network: "Aurora", start: "#071a33", mid: "#0c4fa7", end: "#2c7ef0", glow: "rgba(255, 255, 255, 0.26)" },
+    { network: "Summit", start: "#231235", mid: "#6c2bd9", end: "#f25d9c", glow: "rgba(255, 210, 236, 0.28)" },
+    { network: "Atlas", start: "#16251e", mid: "#1f7a5f", end: "#5bc58f", glow: "rgba(218, 255, 234, 0.24)" },
+    { network: "Ember", start: "#2f160d", mid: "#b84d1f", end: "#f0a84a", glow: "rgba(255, 234, 205, 0.28)" }
+];
+const sampleNames = [
+    "JORDAN BANKS",
+    "RILEY CARTER",
+    "MORGAN REED",
+    "TAYLOR BROOKS",
+    "CAMERON HAYES",
+    "ALEX RIVERS"
+];
 
 function syncThemeColor() {
     if (!themeColorMeta) {
@@ -83,16 +97,17 @@ function registerThemeListener() {
 }
 
 function loadCardState() {
-    const defaults = {
-        number: "4921 6620 1948 1203",
-        name: "JORDAN BANKS",
-        hidden: false,
-        x: 28,
-        y: 42
-    };
+    const defaults = generateDeviceCardDefaults();
 
     try {
-        return { ...defaults, ...JSON.parse(localStorage.getItem(storageKey) || "{}") };
+        const savedState = JSON.parse(localStorage.getItem(storageKey) || "{}");
+        const mergedState = { ...defaults, ...savedState };
+
+        if (!savedState.theme || !savedState.expiry || !savedState.network) {
+            saveCardState(mergedState);
+        }
+
+        return mergedState;
     } catch {
         return defaults;
     }
@@ -100,6 +115,49 @@ function loadCardState() {
 
 function saveCardState(state) {
     localStorage.setItem(storageKey, JSON.stringify(state));
+}
+
+function randomDigits(length) {
+    let value = "";
+    for (let index = 0; index < length; index += 1) {
+        value += Math.floor(Math.random() * 10);
+    }
+    return value;
+}
+
+function buildCardNumber() {
+    return ["4" + randomDigits(3), randomDigits(4), randomDigits(4), randomDigits(4)].join(" ");
+}
+
+function buildExpiry() {
+    const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
+    const year = String((new Date().getFullYear() + 2 + Math.floor(Math.random() * 5)) % 100).padStart(2, "0");
+    return `${month}/${year}`;
+}
+
+function generateDeviceCardDefaults() {
+    const theme = cardThemes[Math.floor(Math.random() * cardThemes.length)];
+    return {
+        number: buildCardNumber(),
+        name: sampleNames[Math.floor(Math.random() * sampleNames.length)],
+        expiry: buildExpiry(),
+        network: theme.network,
+        theme,
+        hidden: false,
+        x: 28,
+        y: 42
+    };
+}
+
+function applyCardTheme(cardElement, theme) {
+    if (!cardElement || !theme) {
+        return;
+    }
+
+    cardElement.style.setProperty("--card-start", theme.start);
+    cardElement.style.setProperty("--card-mid", theme.mid);
+    cardElement.style.setProperty("--card-end", theme.end);
+    cardElement.style.setProperty("--card-glow", theme.glow);
 }
 
 function maskCardNumber(number) {
@@ -121,11 +179,13 @@ function setupInteractiveCard() {
     const controlsPanel = document.getElementById("cardControlsPanel");
     const numberDisplay = document.getElementById("cardNumberDisplay");
     const nameDisplay = document.getElementById("cardNameDisplay");
+    const expiryDisplay = document.getElementById("cardExpiryDisplay");
+    const networkDisplay = document.getElementById("cardNetworkDisplay");
     const numberInput = document.getElementById("cardNumberInput");
     const nameInput = document.getElementById("cardNameInput");
     const toggleButton = document.getElementById("toggleCardNumber");
 
-    if (!card || !stage || !controlsPanel || !numberDisplay || !nameDisplay || !numberInput || !nameInput || !toggleButton) {
+    if (!card || !stage || !controlsPanel || !numberDisplay || !nameDisplay || !expiryDisplay || !networkDisplay || !numberInput || !nameInput || !toggleButton) {
         return;
     }
 
@@ -140,9 +200,12 @@ function setupInteractiveCard() {
         nameInput.value = state.name;
         numberDisplay.textContent = state.hidden ? maskCardNumber(state.number) : state.number;
         nameDisplay.textContent = state.name;
+        expiryDisplay.textContent = state.expiry || "08/29";
+        networkDisplay.textContent = state.network || "Aurora";
         toggleButton.textContent = state.hidden ? "Show number" : "Hide number";
         card.style.left = `${state.x}px`;
         card.style.top = `${state.y}px`;
+        applyCardTheme(card, state.theme);
         saveCardState(state);
     }
 
@@ -259,10 +322,13 @@ function setupInteractiveCard() {
 }
 
 function setupCardPreview() {
+    const cardPreview = document.getElementById("bankCardPreview");
     const numberPreview = document.getElementById("cardNumberPreview");
     const namePreview = document.getElementById("cardNamePreview");
+    const expiryPreview = document.getElementById("cardExpiryPreview");
+    const networkPreview = document.getElementById("cardNetworkPreview");
 
-    if (!numberPreview || !namePreview) {
+    if (!cardPreview || !numberPreview || !namePreview || !expiryPreview || !networkPreview) {
         return;
     }
 
@@ -272,6 +338,9 @@ function setupCardPreview() {
 
     numberPreview.textContent = state.hidden ? maskCardNumber(formattedNumber) : formattedNumber;
     namePreview.textContent = formattedName;
+    expiryPreview.textContent = state.expiry || "08/29";
+    networkPreview.textContent = state.network || "Aurora";
+    applyCardTheme(cardPreview, state.theme);
 }
 
 function registerServiceWorker() {

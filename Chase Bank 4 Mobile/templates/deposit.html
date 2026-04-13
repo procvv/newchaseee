@@ -2,7 +2,7 @@
 
 {% block title %}Deposit | {{ app_name }}{% endblock %}
 {% block page_title %}Deposit a check{% endblock %}
-{% block page_subtitle %}<p class="page-subtitle">Capture a sample check image to simulate a mobile deposit.</p>{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Capture a check image to submit a mobile deposit.</p>{% endblock %}
 
 {% block content %}
     <section class="card section-card">
@@ -22,14 +22,14 @@
             <label class="field-label" for="amount">Amount</label>
             <input id="amount" type="number" step="0.01" min="1" name="amount" placeholder="$0.00" value="{{ form_data.get('amount', '') }}" required>
             <div class="field-group">
-                <label class="field-label" for="check_image">Sample check photo</label>
+                <label class="field-label" for="check_image">Check photo</label>
                 <input id="check_image" class="file-input" type="file" accept="image/*" capture="environment" name="check_image" required>
-                <p class="helper-copy">Take or upload a sample image to simulate front-of-check capture.</p>
+                <p class="helper-copy">Take or upload an image to capture the front of a check.</p>
             </div>
             <div class="info-strip">
-                <p>This is a demo capture flow. Use a sample image only.</p>
+                <p>Use a clear photo with good lighting so the check is easy to read.</p>
             </div>
-            <button class="button" type="submit">Submit sample deposit</button>
+            <button class="button" type="submit">Submit deposit</button>
         </form>
     </section>
 
