@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Add Money | {{ app_name }}{% endblock %}
+{% block page_title %}Add money{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Demo card funding flow with sample validation for a 16-digit card number.</p>{% endblock %}
+
+{% block content %}
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Funding source</p>
+                <h2 class="section-title">Enter card details</h2>
+            </div>
+        </div>
+
+        {% if error %}
+            <div class="error-banner">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" class="stack-form">
+            <div class="field-group">
+                <label class="field-label" for="amount">Amount</label>
+                <input id="amount" type="number" step="0.01" min="1" name="amount" placeholder="$0.00" value="{{ form_data.get('amount', '') }}" required>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="card_number">Card number</label>
+                <input id="card_number" type="text" inputmode="numeric" maxlength="19" name="card_number" placeholder="1234 5678 9012 3456" value="{{ form_data.get('card_number', '') }}" required>
+            </div>
+
+            <div class="field-split">
+                <div class="field-group">
+                    <label class="field-label" for="expiry">Expiry</label>
+                    <input id="expiry" type="text" maxlength="5" name="expiry" placeholder="08/29" value="{{ form_data.get('expiry', '') }}" required>
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="cvv">CVV</label>
+                    <input id="cvv" type="text" inputmode="numeric" maxlength="4" name="cvv" placeholder="123" value="{{ form_data.get('cvv', '') }}" required>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="holder_name">Cardholder name</label>
+                <input id="holder_name" type="text" maxlength="32" name="holder_name" placeholder="Sample User" value="{{ form_data.get('holder_name', '') }}" required>
+            </div>
+
+            <div class="info-strip">
+                <p>This is a demo form. Enter sample values only.</p>
+            </div>
+
+            <button class="button" type="submit">Add money</button>
+        </form>
+    </section>
+{% endblock %}

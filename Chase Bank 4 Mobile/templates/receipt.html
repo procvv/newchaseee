@@ -1,14 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Receipt | Chase Secure{% endblock %}
-{% block page_title %}Deposit submitted{% endblock %}
-{% block page_subtitle %}<p class="page-subtitle">Your deposit was received and is being processed.</p>{% endblock %}
+{% block title %}Receipt | {{ app_name }}{% endblock %}
+{% block page_title %}Activity submitted{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Your demo transaction was recorded successfully.</p>{% endblock %}
 
 {% block content %}
     <section class="card receipt-card section-card">
         <div class="receipt-badge">Approved</div>
         <h2 class="receipt-amount">${{ "%.2f"|format(amount) }}</h2>
-        <p class="receipt-copy">Deposit to checking ending in {{ last4 }}</p>
+        <p class="receipt-copy">
+            {% if source == 'card' %}
+                Added from card ending in {{ last4 }}
+            {% else %}
+                Sample check deposit to checking ending in {{ last4 }}
+            {% endif %}
+        </p>
 
         <div class="detail-list">
             <div class="detail-row">
@@ -16,12 +22,16 @@
                 <span class="detail-value success">Approved</span>
             </div>
             <div class="detail-row">
+                <span class="detail-label">Type</span>
+                <span class="detail-value">{% if source == 'card' %}Add money{% else %}Check deposit{% endif %}</span>
+            </div>
+            <div class="detail-row">
                 <span class="detail-label">Date</span>
                 <span class="detail-value">{{ date }}</span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">Account</span>
-                <span class="detail-value">Checking •••• {{ last4 }}</span>
+                <span class="detail-label">{% if source == 'card' %}Cardholder{% else %}Account{% endif %}</span>
+                <span class="detail-value">{% if source == 'card' %}{{ holder_name }}{% else %}Checking •••• {{ last4 }}{% endif %}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Transaction ID</span>
@@ -30,7 +40,7 @@
         </div>
 
         <div class="info-strip success-strip">
-            <p>Funds availability may vary based on account history and review.</p>
+            <p>This receipt is for demo purposes only and does not process real funds.</p>
         </div>
         <a href="/" class="button cta-link">Done</a>
     </section>

@@ -15,43 +15,85 @@ transactions = [
     {"title": "Cash App transfer", "subtitle": "Sunday, 4:21 PM", "amount": "-$120.00", "positive": False, "category": "Transfer"},
     {"title": "ATM deposit", "subtitle": "Saturday, 11:11 AM", "amount": "+$300.00", "positive": True, "category": "Deposit"},
 ]
+app_name = "Northstar Demo"
 
 @app.route("/")
 def home():
-    return render_template("home.html", balance=balance, transactions=transactions[:3], active_page="accounts")
+    return render_template("home.html", balance=balance, transactions=transactions[:3], active_page="accounts", app_name=app_name)
 
 
 @app.route("/card")
 def card_page():
-    return render_template("card.html", active_page="card")
+    return render_template("card.html", active_page="card", app_name=app_name)
 
 @app.route("/deposit", methods=["GET", "POST"])
 def deposit():
     global balance
     if request.method == "POST":
         amount = float(request.form["amount"])
+        check_image = request.files.get("check_image")
+        if not check_image or not check_image.filename:
+            return render_template(
+                "deposit.html",
+                active_page="accounts",
+                app_name=app_name,
+                error="Add a sample check photo to continue.",
+                form_data=request.form
+            )
         balance += amount
-        return redirect(f"/receipt?amount={amount}")
-    return render_template("deposit.html", active_page="accounts")
+        return redirect(f"/receipt?amount={amount}&source=check")
+    return render_template("deposit.html", active_page="accounts", app_name=app_name, error=None, form_data={})
+
+
+@app.route("/add-money", methods=["GET", "POST"])
+def add_money():
+    global balance
+    if request.method == "POST":
+        amount = float(request.form["amount"])
+        card_number = "".join(ch for ch in request.form["card_number"] if ch.isdigit())
+        expiry = request.form["expiry"]
+        cvv = request.form["cvv"]
+        holder_name = request.form["holder_name"]
+
+        if len(card_number) != 16:
+            return render_template(
+                "add_money.html",
+                active_page="accounts",
+                app_name=app_name,
+                error="Card number must be exactly 16 digits.",
+                form_data=request.form
+            )
+
+        balance += amount
+        return redirect(
+            f"/receipt?amount={amount}&source=card&last4={card_number[-4:]}&holder_name={holder_name}"
+        )
+
+    return render_template("add_money.html", active_page="accounts", app_name=app_name, error=None, form_data={})
 
 @app.route("/receipt")
 def receipt():
     amount = float(request.args.get("amount"))
     now = datetime.now()
-    last4 = random.randint(1000, 9999)
+    last4 = request.args.get("last4") or random.randint(1000, 9999)
     tx_id = random.randint(100000000000, 999999999999)
+    source = request.args.get("source", "deposit")
+    holder_name = request.args.get("holder_name", "Sample User")
 
     return render_template("receipt.html",
                            amount=amount,
                            date=now.strftime("%m/%d/%Y %H:%M"),
                            last4=last4,
                            tx_id=tx_id,
-                           active_page="accounts")
+                           source=source,
+                           holder_name=holder_name,
+                           active_page="accounts",
+                           app_name=app_name)
 
 
 @app.route("/transactions")
 def transactions_page():
-    return render_template("transactions.html", transactions=transactions, balance=balance, active_page="transactions")
+    return render_template("transactions.html", transactions=transactions, balance=balance, active_page="transactions", app_name=app_name)
 
 
 @app.route("/healthz")

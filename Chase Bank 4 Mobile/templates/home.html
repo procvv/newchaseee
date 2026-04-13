@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Accounts | Chase Secure{% endblock %}
+{% block title %}Accounts | {{ app_name }}{% endblock %}
 {% block page_title %}Good evening{% endblock %}
 {% block page_subtitle %}<p class="page-subtitle">Your accounts are secure and up to date.</p>{% endblock %}
 
@@ -12,7 +12,7 @@
         <article class="bank-card bank-card-preview" id="bankCardPreview" aria-label="Debit card preview">
             <div class="bank-card-top">
                 <div>
-                    <p class="bank-card-brand">CHASE SECURE</p>
+                    <p class="bank-card-brand">{{ app_name }}</p>
                     <p class="bank-card-type">Debit</p>
                 </div>
                 <div class="bank-card-chip"></div>
@@ -45,7 +45,7 @@
         <div class="section-header">
             <div>
                 <p class="section-label">Checking account</p>
-                <h2 class="section-title">CHASE SECURE (...1203)</h2>
+                <h2 class="section-title">Northstar Everyday (...1203)</h2>
             </div>
             <p class="section-amount">${{ "%.2f"|format(balance) }}</p>
         </div>
@@ -70,11 +70,14 @@
             </div>
         </div>
 
-        <a href="/deposit" class="button cta-link">Deposit check</a>
+        <div class="action-row">
+            <a href="/deposit" class="button cta-link">Deposit check</a>
+            <a href="/add-money" class="button cta-link secondary-cta">Add money</a>
+        </div>
         <div class="action-row">
             <div class="mini-action">
                 <p class="mini-action-label">Transfers</p>
-                <p class="mini-action-copy">Move money between your accounts.</p>
+                <p class="mini-action-copy">Move money between your demo accounts.</p>
             </div>
             <div class="mini-action">
                 <p class="mini-action-label">Activity</p>

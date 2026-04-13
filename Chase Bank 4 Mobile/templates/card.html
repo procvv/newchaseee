@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Card | Chase Secure{% endblock %}
+{% block title %}Card | {{ app_name }}{% endblock %}
 {% block page_title %}Card controls{% endblock %}
 {% block page_subtitle %}<p class="page-subtitle">Update your card details, show or hide the number, and position the card how you want.</p>{% endblock %}
 
@@ -11,7 +11,7 @@
         <article class="bank-card" id="bankCard" aria-label="Debit card editor" role="button" tabindex="0">
             <div class="bank-card-top">
                 <div>
-                    <p class="bank-card-brand">CHASE SECURE</p>
+                    <p class="bank-card-brand">{{ app_name }}</p>
                     <p class="bank-card-type">Debit</p>
                 </div>
                 <div class="bank-card-chip"></div>

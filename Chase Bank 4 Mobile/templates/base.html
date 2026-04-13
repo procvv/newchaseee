@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>{% block title %}Chase Secure{% endblock %}</title>
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
     <meta name="theme-color" content="#f3f7fc" id="themeColorMeta">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Chase Secure">
-    <meta name="description" content="A mobile-friendly banking demo that can be installed to your home screen.">
+    <meta name="apple-mobile-web-app-title" content="{{ app_name }}">
+    <meta name="description" content="A fictional finance demo app that can be installed to your home screen.">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
@@ -19,12 +19,16 @@
     <div class="container app-shell">
         <header class="app-topbar">
             <div>
-                <p class="eyebrow">Chase Secure</p>
+                <p class="eyebrow">{{ app_name }}</p>
                 <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
                 {% block page_subtitle %}{% endblock %}
             </div>
             <div class="brand-mark" aria-hidden="true">C</div>
         </header>
+
+        <section class="demo-banner">
+            <p>Demo app. Use sample details only.</p>
+        </section>
 
         <section class="install-banner is-hidden" id="installBanner" aria-live="polite">
             <div>
