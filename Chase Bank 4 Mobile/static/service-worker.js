@@ -1,4 +1,4 @@
-const CACHE_NAME = "chase-secure-v1";
+const CACHE_NAME = "NorthStar-secure-v1";
 const APP_SHELL = [
     "/",
     "/deposit",

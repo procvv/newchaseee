@@ -1,6 +1,6 @@
 {
-  "name": "Chase Secure",
-  "short_name": "Chase",
+  "name": "NorthStar Secure",
+  "short_name": "NorthStar",
   "description": "A mobile-friendly banking demo with installable home-screen support.",
   "start_url": "/",
   "scope": "/",
