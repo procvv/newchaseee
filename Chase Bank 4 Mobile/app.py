@@ -78,7 +78,7 @@ def receipt():
     last4 = request.args.get("last4") or random.randint(1000, 9999)
     tx_id = random.randint(100000000000, 999999999999)
     source = request.args.get("source", "deposit")
-    holder_name = request.args.get("holder_name", "Holder Name")
+    holder_name = request.args.get("holder_name", "Holder Name ")
 
     return render_template("receipt.html",
                            amount=amount,
