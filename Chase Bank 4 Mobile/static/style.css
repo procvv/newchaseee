@@ -164,6 +164,16 @@ body {
     animation: riseIn 0.45s ease;
 }
 
+.card-stage-editor {
+    height: 300px;
+}
+
+.card-preview-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
 .ghost-card,
 .bank-card {
     position: absolute;
@@ -212,6 +222,10 @@ body {
     cursor: grabbing;
     animation: none;
     transform: scale(1.02);
+}
+
+.bank-card-preview {
+    cursor: pointer;
 }
 
 .bank-card-top,
@@ -645,7 +659,7 @@ input:focus {
     bottom: calc(14px + env(safe-area-inset-bottom));
     z-index: 20;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     width: min(calc(100% - 24px), 394px);
     padding: 10px;

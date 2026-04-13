@@ -258,6 +258,22 @@ function setupInteractiveCard() {
     applyState();
 }
 
+function setupCardPreview() {
+    const numberPreview = document.getElementById("cardNumberPreview");
+    const namePreview = document.getElementById("cardNamePreview");
+
+    if (!numberPreview || !namePreview) {
+        return;
+    }
+
+    const state = loadCardState();
+    const formattedNumber = formatCardNumber(state.number) || "4921 6620 1948 1203";
+    const formattedName = (state.name || "JORDAN BANKS").trim().toUpperCase() || "JORDAN BANKS";
+
+    numberPreview.textContent = state.hidden ? maskCardNumber(formattedNumber) : formattedNumber;
+    namePreview.textContent = formattedName;
+}
+
 function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) {
         return;
@@ -270,5 +286,6 @@ function registerServiceWorker() {
 
 registerThemeListener();
 registerInstallFlow();
+setupCardPreview();
 setupInteractiveCard();
 registerServiceWorker();

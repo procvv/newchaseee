@@ -20,6 +20,11 @@ transactions = [
 def home():
     return render_template("home.html", balance=balance, transactions=transactions[:3], active_page="accounts")
 
+
+@app.route("/card")
+def card_page():
+    return render_template("card.html", active_page="card")
+
 @app.route("/deposit", methods=["GET", "POST"])
 def deposit():
     global balance

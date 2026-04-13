@@ -5,10 +5,11 @@
 {% block page_subtitle %}<p class="page-subtitle">Your accounts are secure and up to date.</p>{% endblock %}
 
 {% block content %}
-    <section class="card-stage" id="cardStage">
+    <a href="/card" class="card-preview-link" aria-label="Open card controls">
+    <section class="card-stage">
         <div class="floating-card ghost-card ghost-card-back" aria-hidden="true"></div>
         <div class="floating-card ghost-card ghost-card-mid" aria-hidden="true"></div>
-        <article class="bank-card" id="bankCard" aria-label="Debit card" role="button" tabindex="0">
+        <article class="bank-card bank-card-preview" id="bankCardPreview" aria-label="Debit card preview">
             <div class="bank-card-top">
                 <div>
                     <p class="bank-card-brand">CHASE SECURE</p>
@@ -16,11 +17,11 @@
                 </div>
                 <div class="bank-card-chip"></div>
             </div>
-            <div class="bank-card-number" id="cardNumberDisplay">4921 6620 1948 1203</div>
+            <div class="bank-card-number" id="cardNumberPreview">4921 6620 1948 1203</div>
             <div class="bank-card-footer">
                 <div>
                     <p class="bank-card-caption">Cardholder</p>
-                    <p class="bank-card-name" id="cardNameDisplay">JORDAN BANKS</p>
+                    <p class="bank-card-name" id="cardNamePreview">JORDAN BANKS</p>
                 </div>
                 <div>
                     <p class="bank-card-caption">Exp</p>
@@ -29,31 +30,7 @@
             </div>
         </article>
     </section>
-
-    <section class="card section-card card-controls-panel" id="cardControlsPanel">
-        <div class="section-header compact">
-            <div>
-                <p class="section-label">Card controls</p>
-                <h2 class="section-title">Customize your card</h2>
-            </div>
-            <button class="secondary-button" type="button" id="toggleCardNumber">Hide number</button>
-        </div>
-
-        <div class="card-editor-grid">
-            <div class="field-group">
-                <label class="field-label" for="cardNumberInput">Card number</label>
-                <input id="cardNumberInput" type="text" inputmode="numeric" maxlength="19" value="4921 6620 1948 1203">
-            </div>
-            <div class="field-group">
-                <label class="field-label" for="cardNameInput">Cardholder name</label>
-                <input id="cardNameInput" type="text" maxlength="26" value="JORDAN BANKS">
-            </div>
-        </div>
-
-        <div class="info-strip">
-            <p>Tap the card to jump here and edit it. Drag the card above to reposition it. Your card details stay saved on this device.</p>
-        </div>
-    </section>
+    </a>
 
     <section class="hero-card">
         <div class="hero-copy">
