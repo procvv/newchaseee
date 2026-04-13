@@ -158,10 +158,11 @@ function setupInteractiveCard() {
     let pointerStartX = 0;
     let pointerStartY = 0;
     let movedCard = false;
+    let suppressCardTap = false;
 
     function activateEditor() {
         controlsPanel.classList.add("active");
-        controlsPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        controlsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
         window.setTimeout(() => {
             numberInput.focus();
             numberInput.setSelectionRange(numberInput.value.length, numberInput.value.length);
@@ -175,7 +176,9 @@ function setupInteractiveCard() {
         pointerStartY = event.clientY;
         movedCard = false;
         card.classList.add("dragging");
-        card.setPointerCapture(event.pointerId);
+        if (card.setPointerCapture) {
+            card.setPointerCapture(event.pointerId);
+        }
     });
 
     card.addEventListener("pointermove", (event) => {
@@ -200,13 +203,32 @@ function setupInteractiveCard() {
         card.classList.remove("dragging");
         saveCardState(state);
 
-        if (!movedCard) {
-            activateEditor();
+        if (movedCard) {
+            suppressCardTap = true;
+            window.setTimeout(() => {
+                suppressCardTap = false;
+            }, 220);
         }
     }
 
     card.addEventListener("pointerup", endDrag);
     card.addEventListener("pointercancel", endDrag);
+    card.addEventListener("click", (event) => {
+        if (suppressCardTap) {
+            event.preventDefault();
+            return;
+        }
+
+        activateEditor();
+    });
+    card.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+            return;
+        }
+
+        event.preventDefault();
+        activateEditor();
+    });
 
     toggleButton.addEventListener("click", () => {
         state.hidden = !state.hidden;
