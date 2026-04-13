@@ -118,13 +118,14 @@ function formatCardNumber(value) {
 function setupInteractiveCard() {
     const card = document.getElementById("bankCard");
     const stage = document.getElementById("cardStage");
+    const controlsPanel = document.getElementById("cardControlsPanel");
     const numberDisplay = document.getElementById("cardNumberDisplay");
     const nameDisplay = document.getElementById("cardNameDisplay");
     const numberInput = document.getElementById("cardNumberInput");
     const nameInput = document.getElementById("cardNameInput");
     const toggleButton = document.getElementById("toggleCardNumber");
 
-    if (!card || !stage || !numberDisplay || !nameDisplay || !numberInput || !nameInput || !toggleButton) {
+    if (!card || !stage || !controlsPanel || !numberDisplay || !nameDisplay || !numberInput || !nameInput || !toggleButton) {
         return;
     }
 
@@ -154,10 +155,25 @@ function setupInteractiveCard() {
 
     let dragOffsetX = 0;
     let dragOffsetY = 0;
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let movedCard = false;
+
+    function activateEditor() {
+        controlsPanel.classList.add("active");
+        controlsPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        window.setTimeout(() => {
+            numberInput.focus();
+            numberInput.setSelectionRange(numberInput.value.length, numberInput.value.length);
+        }, 180);
+    }
 
     card.addEventListener("pointerdown", (event) => {
         dragOffsetX = event.clientX - card.offsetLeft;
         dragOffsetY = event.clientY - card.offsetTop;
+        pointerStartX = event.clientX;
+        pointerStartY = event.clientY;
+        movedCard = false;
         card.classList.add("dragging");
         card.setPointerCapture(event.pointerId);
     });
@@ -168,6 +184,9 @@ function setupInteractiveCard() {
         }
 
         const stageRect = stage.getBoundingClientRect();
+        if (Math.abs(event.clientX - pointerStartX) > 6 || Math.abs(event.clientY - pointerStartY) > 6) {
+            movedCard = true;
+        }
         clampPosition(event.clientX - stageRect.left - dragOffsetX, event.clientY - stageRect.top - dragOffsetY);
         card.style.left = `${state.x}px`;
         card.style.top = `${state.y}px`;
@@ -180,6 +199,10 @@ function setupInteractiveCard() {
 
         card.classList.remove("dragging");
         saveCardState(state);
+
+        if (!movedCard) {
+            activateEditor();
+        }
     }
 
     card.addEventListener("pointerup", endDrag);
@@ -191,14 +214,19 @@ function setupInteractiveCard() {
     });
 
     numberInput.addEventListener("input", (event) => {
+        controlsPanel.classList.add("active");
         state.number = formatCardNumber(event.target.value);
         applyState();
     });
 
     nameInput.addEventListener("input", (event) => {
+        controlsPanel.classList.add("active");
         state.name = event.target.value.toUpperCase().slice(0, 26);
         applyState();
     });
+
+    numberInput.addEventListener("focus", () => controlsPanel.classList.add("active"));
+    nameInput.addEventListener("focus", () => controlsPanel.classList.add("active"));
 
     window.addEventListener("resize", () => {
         clampPosition(state.x, state.y);

@@ -275,6 +275,18 @@ body {
     animation: riseIn 0.4s ease;
 }
 
+.card-controls-panel {
+    transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.card-controls-panel.active {
+    border-color: rgba(11, 86, 179, 0.34);
+    box-shadow:
+        0 0 0 4px rgba(11, 86, 179, 0.12),
+        var(--shadow);
+    transform: translateY(-2px);
+}
+
 .hero-card {
     position: relative;
     overflow: hidden;
