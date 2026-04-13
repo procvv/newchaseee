@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt | Chase Secure{% endblock %}
+{% block page_title %}Receipt{% endblock %}
+
+{% block content %}
+    <section class="card receipt-card">
+        <h2 class="receipt-status">Approved</h2>
+        <h1>$ {{ amount }}</h1>
+        <p>Deposited</p>
+
+        <hr>
+
+        <p>Card: **** {{ last4 }}</p>
+        <p>Date: {{ date }}</p>
+        <p>Transaction #: {{ tx_id }}</p>
+
+        <a href="/" class="button cta-link">Done</a>
+    </section>
+{% endblock %}

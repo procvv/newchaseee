@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts | Chase Secure{% endblock %}
+{% block page_title %}Accounts{% endblock %}
+
+{% block content %}
+    <section class="card account-card">
+        <p class="account-label">CHASE SECURE (...1203)</p>
+        <div class="balance">$ {{ balance }}</div>
+    </section>
+
+    <a href="/deposit" class="button cta-link">Deposit Money</a>
+{% endblock %}

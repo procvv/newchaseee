@@ -1,0 +1,25 @@
+{
+  "name": "Chase Secure",
+  "short_name": "Chase",
+  "description": "A mobile-friendly banking demo with installable home-screen support.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eff4fb",
+  "theme_color": "#0a3d91",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

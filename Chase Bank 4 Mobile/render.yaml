@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: chase-bank-4-mobile
+    runtime: python
+    plan: free
+    region: ohio
+    rootDir: Chase Bank 4 Mobile
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit

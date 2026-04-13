@@ -1,0 +1,253 @@
+:root {
+    color-scheme: light;
+    --bg-top: #eff4fb;
+    --bg-bottom: #dbe7ff;
+    --surface: rgba(255, 255, 255, 0.92);
+    --surface-strong: #ffffff;
+    --text: #122033;
+    --muted: #5f6f87;
+    --line: rgba(10, 61, 145, 0.12);
+    --primary: #0a3d91;
+    --primary-strong: #082f71;
+    --success: #198754;
+    --shadow: 0 18px 40px rgba(8, 38, 86, 0.14);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(76, 132, 220, 0.18), transparent 32%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+body.dark {
+    color-scheme: dark;
+    --bg-top: #07101d;
+    --bg-bottom: #0e1b30;
+    --surface: rgba(14, 25, 43, 0.92);
+    --surface-strong: #142742;
+    --text: #f5f8ff;
+    --muted: #afbed6;
+    --line: rgba(181, 204, 255, 0.12);
+    --primary: #7eb0ff;
+    --primary-strong: #4c8bf6;
+    --shadow: 0 20px 44px rgba(0, 0, 0, 0.32);
+}
+
+.container {
+    width: min(100%, 430px);
+    margin: 0 auto;
+    padding: calc(18px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+}
+
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.app-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 6px;
+}
+
+.eyebrow {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.page-title {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1;
+}
+
+.icon-button {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+}
+
+.install-banner,
+.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    animation: fadeIn 0.35s ease;
+    backdrop-filter: blur(18px);
+}
+
+.install-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px;
+}
+
+.install-banner.is-hidden {
+    display: none;
+}
+
+.install-title {
+    margin: 0 0 4px;
+    font-weight: 700;
+}
+
+.install-copy {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.install-button,
+.button {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(180deg, var(--primary), var(--primary-strong));
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.install-button {
+    width: auto;
+    min-width: 108px;
+    padding-inline: 18px;
+}
+
+.install-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.card {
+    padding: 22px;
+}
+
+.account-card {
+    background:
+        linear-gradient(135deg, rgba(10, 61, 145, 0.98), rgba(36, 104, 215, 0.9)),
+        var(--surface-strong);
+    color: #ffffff;
+}
+
+.account-label {
+    margin: 0 0 18px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.balance {
+    font-size: 40px;
+    font-weight: 800;
+    text-align: right;
+}
+
+.cta-link {
+    display: block;
+    text-decoration: none;
+}
+
+.text-link {
+    color: var(--primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 14px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--surface-strong);
+    color: var(--text);
+    font-size: 18px;
+    text-align: center;
+}
+
+input::placeholder {
+    color: var(--muted);
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 18px 0;
+}
+
+.receipt-card {
+    text-align: center;
+}
+
+.receipt-status {
+    margin: 0 0 8px;
+    color: var(--success);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 420px) {
+    .install-banner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .page-title {
+        font-size: 28px;
+    }
+}
