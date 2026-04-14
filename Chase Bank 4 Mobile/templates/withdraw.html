@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Withdraw | {{ app_name }}{% endblock %}
+{% block page_title %}Withdraw funds{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Send money out to simulated wallets on this device without affecting any real payment apps.</p>{% endblock %}
+
+{% block content %}
+    <script id="deviceLedgerSeed" type="application/json">{{ {"balance": balance, "transactions": transactions}|tojson }}</script>
+
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Available to withdraw</p>
+                <h2 class="section-title">Live device balance</h2>
+            </div>
+            <p class="section-amount" data-live-balance>${{ "%.2f"|format(balance) }}</p>
+        </div>
+
+        <div class="info-strip">
+            <p>Cash outs here are device-only demos for fake Cash App, Venmo, and Apple Pay destinations.</p>
+        </div>
+    </section>
+
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Withdraw</p>
+                <h2 class="section-title">Choose a fake wallet</h2>
+            </div>
+        </div>
+
+        <form class="stack-form" id="withdrawForm">
+            <div class="wallet-grid">
+                {% for provider in providers %}
+                    <label class="wallet-option">
+                        <input class="sr-only" type="radio" name="withdrawProvider" value="{{ provider }}" {% if loop.first %}checked{% endif %}>
+                        <span class="wallet-option-card">{{ provider }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <div class="field-split">
+                <div class="field-group">
+                    <label class="field-label" for="withdrawAmount">Amount</label>
+                    <input id="withdrawAmount" type="number" step="0.01" min="0.01" placeholder="$0.00" required>
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="withdrawHandle">Handle</label>
+                    <input id="withdrawHandle" type="text" maxlength="32" placeholder="$northstar-demo">
+                </div>
+            </div>
+
+            <button class="button" type="submit">Send to fake wallet</button>
+        </form>
+
+        <div class="info-strip">
+            <p id="withdrawStatus">Withdrawals create a transfer on this device and immediately reduce the live balance.</p>
+        </div>
+    </section>
+{% endblock %}

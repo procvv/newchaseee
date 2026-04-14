@@ -16,6 +16,7 @@ transactions = [
     {"title": "ATM deposit", "subtitle": "Saturday, 11:11 AM", "amount": "+$300.00", "positive": True, "category": "Deposit"},
 ]
 app_name = "Northstar Bank"
+withdraw_providers = ["Cash App", "Venmo", "Apple Pay"]
 
 @app.route("/")
 def home():
@@ -94,6 +95,18 @@ def receipt():
 @app.route("/transactions")
 def transactions_page():
     return render_template("transactions.html", transactions=transactions, balance=balance, active_page="transactions", app_name=app_name)
+
+
+@app.route("/withdraw")
+def withdraw_page():
+    return render_template(
+        "withdraw.html",
+        balance=balance,
+        transactions=transactions,
+        providers=withdraw_providers,
+        active_page="accounts",
+        app_name=app_name
+    )
 
 
 @app.route("/profile")

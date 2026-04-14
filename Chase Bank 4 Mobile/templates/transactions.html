@@ -5,23 +5,25 @@
 {% block page_subtitle %}<p class="page-subtitle">Review recent account activity and posted deposits.</p>{% endblock %}
 
 {% block content %}
+    <script id="deviceLedgerSeed" type="application/json">{{ {"balance": balance, "transactions": transactions}|tojson }}</script>
+
     <section class="card section-card">
         <div class="section-header compact">
             <div>
                 <p class="section-label">Checking ending in 1203</p>
                 <h2 class="section-title">Recent activity</h2>
             </div>
-            <p class="section-amount">${{ "%.2f"|format(balance) }}</p>
+            <p class="section-amount" data-live-balance>${{ "%.2f"|format(balance) }}</p>
         </div>
 
         <div class="transaction-filter-row">
-            <span class="filter-pill active">All</span>
-            <span class="filter-pill">Deposits</span>
-            <span class="filter-pill">Card</span>
-            <span class="filter-pill">Transfers</span>
+            <button class="filter-pill active" type="button" data-transaction-filter="All">All</button>
+            <button class="filter-pill" type="button" data-transaction-filter="Deposits">Deposits</button>
+            <button class="filter-pill" type="button" data-transaction-filter="Card">Card</button>
+            <button class="filter-pill" type="button" data-transaction-filter="Transfers">Transfers</button>
         </div>
 
-        <div class="activity-list">
+        <div class="activity-list" id="transactionsActivityList">
             {% for tx in transactions %}
                 <div class="activity-item rich-item">
                     <div class="transaction-leading">{{ tx.category[0] }}</div>
@@ -32,6 +34,55 @@
                     <p class="activity-amount {% if tx.positive %}positive{% endif %}">{{ tx.amount }}</p>
                 </div>
             {% endfor %}
+        </div>
+    </section>
+
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Create activity</p>
+                <h2 class="section-title">Add a transaction</h2>
+            </div>
+            <a href="/withdraw" class="secondary-button">Withdraw</a>
+        </div>
+
+        <form class="stack-form" id="manualTransactionForm">
+            <div class="field-group">
+                <label class="field-label" for="transactionTitle">Description</label>
+                <input id="transactionTitle" type="text" maxlength="48" placeholder="Streaming renewal" required>
+            </div>
+
+            <div class="field-split">
+                <div class="field-group">
+                    <label class="field-label" for="transactionAmount">Amount</label>
+                    <input id="transactionAmount" type="number" step="0.01" min="0.01" placeholder="$0.00" required>
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="transactionDirection">Type</label>
+                    <select id="transactionDirection">
+                        <option value="debit">Charge</option>
+                        <option value="credit">Deposit</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="transactionCategory">Category</label>
+                <select id="transactionCategory">
+                    <option value="Subscription">Subscription</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Transfer">Transfer</option>
+                    <option value="Deposit">Deposit</option>
+                    <option value="Income">Income</option>
+                </select>
+            </div>
+
+            <button class="button" type="submit">Create transaction</button>
+        </form>
+
+        <div class="info-strip">
+            <p id="manualTransactionStatus">Transactions you create here stay on this device and update the live balance right away.</p>
         </div>
     </section>
 {% endblock %}

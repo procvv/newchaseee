@@ -4,6 +4,7 @@ const installHelp = document.getElementById("installHelp");
 const themeColorMeta = document.getElementById("themeColorMeta");
 const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 const storageKey = "NorthStar-secure-card";
+const deviceLedgerKey = "northstar-device-ledger-v1";
 const faceIdEnabledKey = "northstar-face-id-enabled";
 const faceIdUnlockedKey = "northstar-face-id-unlocked";
 let deferredPrompt = null;
@@ -20,6 +21,15 @@ const sampleNames = [
     "TAYLOR BROOKS",
     "CAMERON HAYES",
     "ALEX RIVERS"
+];
+const autoChargeCatalog = [
+    { title: "StreamFlix Premium", category: "Subscription", minAmount: 12.99, maxAmount: 19.99 },
+    { title: "CloudBox Storage", category: "Subscription", minAmount: 2.99, maxAmount: 9.99 },
+    { title: "Fitness+ Monthly", category: "Subscription", minAmount: 14.99, maxAmount: 24.99 },
+    { title: "Ride share", category: "Transfer", minAmount: 9.5, maxAmount: 31.75 },
+    { title: "Late-night food order", category: "Food", minAmount: 14.25, maxAmount: 48.9 },
+    { title: "Corner market", category: "Shopping", minAmount: 8.45, maxAmount: 27.6 },
+    { title: "Utility autopay", category: "Bills", minAmount: 42.1, maxAmount: 118.4 }
 ];
 
 function syncThemeColor() {
@@ -436,10 +446,456 @@ function setupFaceIdOverlay() {
     });
 }
 
+function roundCurrency(value) {
+    return Math.round(value * 100) / 100;
+}
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD"
+    }).format(value);
+}
+
+function formatSignedCurrency(value) {
+    return `${value >= 0 ? "+" : "-"}${formatCurrency(Math.abs(value))}`;
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function parseAmount(value) {
+    if (typeof value === "number") {
+        return roundCurrency(value);
+    }
+
+    const numeric = Number.parseFloat(String(value || "").replace(/[^0-9.-]/g, ""));
+    if (Number.isNaN(numeric)) {
+        return 0;
+    }
+
+    return roundCurrency(numeric);
+}
+
+function randomBetween(min, max) {
+    return roundCurrency(Math.random() * (max - min) + min);
+}
+
+function randomChoice(list) {
+    return list[Math.floor(Math.random() * list.length)];
+}
+
+function buildDeviceId() {
+    return `Device ${randomDigits(4)}`;
+}
+
+function buildAutoChargeIntervalMs() {
+    const minutes = 40 + Math.floor(Math.random() * 260);
+    return minutes * 60 * 1000;
+}
+
+function getLedgerSeed() {
+    const seedElement = document.getElementById("deviceLedgerSeed");
+
+    if (!seedElement) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(seedElement.textContent);
+    } catch {
+        return null;
+    }
+}
+
+function createDefaultLedgerState() {
+    return {
+        version: 1,
+        deviceId: buildDeviceId(),
+        deviceTransactions: [],
+        nextAutoChargeAt: Date.now() + buildAutoChargeIntervalMs()
+    };
+}
+
+function loadLedgerState() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(deviceLedgerKey) || "null");
+        if (!parsed || typeof parsed !== "object") {
+            return createDefaultLedgerState();
+        }
+
+        return {
+            version: 1,
+            deviceId: parsed.deviceId || buildDeviceId(),
+            deviceTransactions: Array.isArray(parsed.deviceTransactions) ? parsed.deviceTransactions : [],
+            nextAutoChargeAt: parsed.nextAutoChargeAt || (Date.now() + buildAutoChargeIntervalMs())
+        };
+    } catch {
+        return createDefaultLedgerState();
+    }
+}
+
+function saveLedgerState(state) {
+    localStorage.setItem(deviceLedgerKey, JSON.stringify(state));
+}
+
+function normalizeSeedTransactions(seedTransactions) {
+    const now = Date.now();
+
+    return (Array.isArray(seedTransactions) ? seedTransactions : []).map((tx, index) => ({
+        id: `seed-${index}`,
+        title: tx.title || "Posted activity",
+        subtitle: tx.subtitle || "",
+        signedAmount: parseAmount(tx.amount),
+        category: tx.category || "Activity",
+        timestamp: now - ((index + 1) * 6 * 60 * 60 * 1000),
+        seed: true
+    }));
+}
+
+function createLedgerTransaction({ title, signedAmount, category, timestamp }) {
+    const txTimestamp = timestamp || Date.now();
+
+    return {
+        id: `device-${txTimestamp}-${randomDigits(5)}`,
+        title,
+        signedAmount: roundCurrency(signedAmount),
+        category,
+        timestamp: txTimestamp,
+        seed: false
+    };
+}
+
+function buildAutoCharge(timestamp) {
+    const charge = randomChoice(autoChargeCatalog);
+    const signedAmount = -randomBetween(charge.minAmount, charge.maxAmount);
+
+    return createLedgerTransaction({
+        title: charge.title,
+        signedAmount,
+        category: charge.category,
+        timestamp
+    });
+}
+
+function applyDueAutoCharges(state) {
+    let didChange = false;
+    let guard = 0;
+    const now = Date.now();
+
+    if (!state.nextAutoChargeAt) {
+        state.nextAutoChargeAt = now + buildAutoChargeIntervalMs();
+        return true;
+    }
+
+    while (state.nextAutoChargeAt <= now && guard < 12) {
+        state.deviceTransactions.unshift(buildAutoCharge(state.nextAutoChargeAt));
+        state.nextAutoChargeAt += buildAutoChargeIntervalMs();
+        didChange = true;
+        guard += 1;
+    }
+
+    if (guard === 12 && state.nextAutoChargeAt <= now) {
+        state.nextAutoChargeAt = now + buildAutoChargeIntervalMs();
+        didChange = true;
+    }
+
+    if (state.deviceTransactions.length > 60) {
+        state.deviceTransactions = state.deviceTransactions.slice(0, 60);
+        didChange = true;
+    }
+
+    return didChange;
+}
+
+function getLiveBalance(runtime) {
+    const deviceDelta = runtime.state.deviceTransactions.reduce((sum, tx) => sum + parseAmount(tx.signedAmount), 0);
+    return roundCurrency(runtime.seed.balance + deviceDelta);
+}
+
+function formatActivityTime(timestamp) {
+    if (!timestamp) {
+        return "Posted recently";
+    }
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.round((today - target) / (24 * 60 * 60 * 1000));
+    const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date);
+
+    if (diffDays <= 0) {
+        return `Today, ${time}`;
+    }
+
+    if (diffDays === 1) {
+        return `Yesterday, ${time}`;
+    }
+
+    if (diffDays < 7) {
+        const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date);
+        return `${weekday}, ${time}`;
+    }
+
+    const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+    return `${shortDate}, ${time}`;
+}
+
+function getMergedTransactions(runtime) {
+    const deviceTransactions = [...runtime.state.deviceTransactions].sort((left, right) => right.timestamp - left.timestamp);
+    return [...deviceTransactions, ...runtime.seed.transactions];
+}
+
+function matchesTransactionFilter(transaction, filterName) {
+    if (filterName === "All") {
+        return true;
+    }
+
+    if (filterName === "Deposits") {
+        return transaction.signedAmount >= 0 || transaction.category === "Deposit" || transaction.category === "Income";
+    }
+
+    if (filterName === "Transfers") {
+        return transaction.category === "Transfer";
+    }
+
+    if (filterName === "Card") {
+        return transaction.signedAmount < 0 && transaction.category !== "Transfer";
+    }
+
+    return true;
+}
+
+function renderActivityList(container, transactions, richItems) {
+    if (!container) {
+        return;
+    }
+
+    if (!transactions.length) {
+        container.innerHTML = `
+            <div class="info-strip">
+                <p>No device activity yet. Leave the app open and random charges will start posting here.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = transactions.map((tx) => {
+        const title = escapeHtml(tx.title);
+        const subtitle = escapeHtml(tx.subtitle || formatActivityTime(tx.timestamp));
+        const amount = escapeHtml(formatSignedCurrency(tx.signedAmount));
+        const categoryBadge = escapeHtml((tx.category || "A").charAt(0).toUpperCase());
+        const amountClass = tx.signedAmount >= 0 ? "activity-amount positive" : "activity-amount";
+
+        if (richItems) {
+            return `
+                <div class="activity-item rich-item">
+                    <div class="transaction-leading">${categoryBadge}</div>
+                    <div class="transaction-body">
+                        <p class="activity-title">${title}</p>
+                        <p class="activity-subtitle">${subtitle}</p>
+                    </div>
+                    <p class="${amountClass}">${amount}</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="activity-item">
+                <div>
+                    <p class="activity-title">${title}</p>
+                    <p class="activity-subtitle">${subtitle}</p>
+                </div>
+                <p class="${amountClass}">${amount}</p>
+            </div>
+        `;
+    }).join("");
+}
+
+function updateLiveBalanceText(runtime) {
+    const liveBalance = getLiveBalance(runtime);
+
+    document.querySelectorAll("[data-live-balance]").forEach((element) => {
+        element.textContent = formatCurrency(liveBalance);
+    });
+
+    const activityBadge = document.getElementById("deviceActivityBadge");
+    if (activityBadge) {
+        activityBadge.textContent = `${runtime.state.deviceTransactions.length} tx`;
+    }
+
+    const activityCopy = document.getElementById("deviceActivityCopy");
+    if (activityCopy) {
+        activityCopy.textContent = `${runtime.state.deviceId} keeps its own live balance, random charges, and subscription renewals on this browser.`;
+    }
+}
+
+function renderLedger(runtime) {
+    updateLiveBalanceText(runtime);
+
+    const mergedTransactions = getMergedTransactions(runtime);
+    const homeList = document.getElementById("homeActivityList");
+    if (homeList) {
+        const limit = Number.parseInt(homeList.dataset.activityLimit || "3", 10);
+        renderActivityList(homeList, mergedTransactions.slice(0, limit), false);
+    }
+
+    const transactionsList = document.getElementById("transactionsActivityList");
+    if (transactionsList) {
+        renderActivityList(
+            transactionsList,
+            mergedTransactions.filter((tx) => matchesTransactionFilter(tx, runtime.activeFilter)),
+            true
+        );
+    }
+}
+
+function persistAndRenderLedger(runtime) {
+    saveLedgerState(runtime.state);
+    renderLedger(runtime);
+}
+
+function addDeviceTransaction(runtime, transaction) {
+    runtime.state.deviceTransactions.unshift(createLedgerTransaction(transaction));
+    if (runtime.state.deviceTransactions.length > 60) {
+        runtime.state.deviceTransactions = runtime.state.deviceTransactions.slice(0, 60);
+    }
+    persistAndRenderLedger(runtime);
+}
+
+function setupTransactionFilters(runtime) {
+    const filters = document.querySelectorAll("[data-transaction-filter]");
+    if (!filters.length) {
+        return;
+    }
+
+    filters.forEach((filterButton) => {
+        filterButton.addEventListener("click", () => {
+            runtime.activeFilter = filterButton.dataset.transactionFilter || "All";
+
+            filters.forEach((button) => {
+                button.classList.toggle("active", button === filterButton);
+            });
+
+            renderLedger(runtime);
+        });
+    });
+}
+
+function setupManualTransactionForm(runtime) {
+    const form = document.getElementById("manualTransactionForm");
+    const status = document.getElementById("manualTransactionStatus");
+
+    if (!form || !status) {
+        return;
+    }
+
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const title = document.getElementById("transactionTitle").value.trim();
+        const amount = parseAmount(document.getElementById("transactionAmount").value);
+        const direction = document.getElementById("transactionDirection").value;
+        const category = document.getElementById("transactionCategory").value;
+
+        if (!title || amount <= 0) {
+            status.textContent = "Add a description and amount to create the transaction.";
+            return;
+        }
+
+        addDeviceTransaction(runtime, {
+            title,
+            signedAmount: direction === "credit" ? amount : -amount,
+            category
+        });
+
+        status.textContent = `${title} was added on ${runtime.state.deviceId} and the live balance updated immediately.`;
+        form.reset();
+        document.getElementById("transactionDirection").value = "debit";
+        document.getElementById("transactionCategory").value = "Subscription";
+    });
+}
+
+function setupWithdrawForm(runtime) {
+    const form = document.getElementById("withdrawForm");
+    const status = document.getElementById("withdrawStatus");
+
+    if (!form || !status) {
+        return;
+    }
+
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const amount = parseAmount(document.getElementById("withdrawAmount").value);
+        const handle = document.getElementById("withdrawHandle").value.trim();
+        const provider = form.querySelector('input[name="withdrawProvider"]:checked')?.value || "Cash App";
+
+        if (amount <= 0) {
+            status.textContent = "Enter a valid amount to withdraw.";
+            return;
+        }
+
+        if (amount > getLiveBalance(runtime)) {
+            status.textContent = "That fake wallet transfer is larger than the live balance on this device.";
+            return;
+        }
+
+        const destination = handle ? ` to ${handle}` : "";
+        addDeviceTransaction(runtime, {
+            title: `${provider} cash out${destination}`,
+            signedAmount: -amount,
+            category: "Transfer"
+        });
+
+        status.textContent = `${formatCurrency(amount)} sent to fake ${provider}${destination}.`;
+        form.reset();
+
+        const firstProvider = form.querySelector('input[name="withdrawProvider"]');
+        if (firstProvider) {
+            firstProvider.checked = true;
+        }
+    });
+}
+
+function setupDeviceLedger() {
+    const seed = getLedgerSeed();
+
+    if (!seed) {
+        return;
+    }
+
+    const runtime = {
+        seed: {
+            balance: parseAmount(seed.balance),
+            transactions: normalizeSeedTransactions(seed.transactions)
+        },
+        state: loadLedgerState(),
+        activeFilter: "All"
+    };
+
+    if (applyDueAutoCharges(runtime.state)) {
+        saveLedgerState(runtime.state);
+    }
+
+    renderLedger(runtime);
+    setupTransactionFilters(runtime);
+    setupManualTransactionForm(runtime);
+    setupWithdrawForm(runtime);
+}
+
 registerThemeListener();
 registerInstallFlow();
 setupCardPreview();
 setupInteractiveCard();
 setupProfileSettings();
 setupFaceIdOverlay();
+setupDeviceLedger();
 registerServiceWorker();

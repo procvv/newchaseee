@@ -5,6 +5,8 @@
 {% block page_subtitle %}<p class="page-subtitle">Your accounts are secure and up to date.</p>{% endblock %}
 
 {% block content %}
+    <script id="deviceLedgerSeed" type="application/json">{{ {"balance": balance, "transactions": transactions}|tojson }}</script>
+
     <a href="/card" class="card-preview-link" aria-label="Open card controls">
     <section class="card-stage">
         <div class="floating-card ghost-card ghost-card-back" aria-hidden="true"></div>
@@ -35,7 +37,7 @@
     <section class="hero-card">
         <div class="hero-copy">
             <p class="hero-label">Total available</p>
-            <div class="hero-balance">${{ "%.2f"|format(balance) }}</div>
+            <div class="hero-balance" data-live-balance>${{ "%.2f"|format(balance) }}</div>
             <p class="hero-meta">Primary checking ending in 1203</p>
         </div>
         <div class="hero-chip">FDIC Insured</div>
@@ -47,18 +49,22 @@
                 <p class="section-label">Checking account</p>
                 <h2 class="section-title">Northstar Everyday (...1203)</h2>
             </div>
-            <p class="section-amount">${{ "%.2f"|format(balance) }}</p>
+            <p class="section-amount" data-live-balance>${{ "%.2f"|format(balance) }}</p>
         </div>
 
         <div class="stat-grid">
             <div class="stat-tile">
                 <p class="stat-label">Available now</p>
-                <p class="stat-value">${{ "%.2f"|format(balance) }}</p>
+                <p class="stat-value" data-live-balance>${{ "%.2f"|format(balance) }}</p>
             </div>
             <div class="stat-tile">
-                <p class="stat-label">Pending deposits</p>
-                <p class="stat-value">$0.00</p>
+                <p class="stat-label">Device activity</p>
+                <p class="stat-value" id="deviceActivityBadge">Live</p>
             </div>
+        </div>
+
+        <div class="info-strip">
+            <p id="deviceActivityCopy">This browser keeps its own live charges, subscriptions, and balance changes.</p>
         </div>
     </section>
 
@@ -75,14 +81,8 @@
             <a href="/add-money" class="button cta-link secondary-cta">Add money</a>
         </div>
         <div class="action-row">
-            <div class="mini-action">
-                <p class="mini-action-label">Transfers</p>
-                <p class="mini-action-copy">Move money between your accounts.</p>
-            </div>
-            <div class="mini-action">
-                <p class="mini-action-label">Activity</p>
-                <p class="mini-action-copy">Review recent transactions and balances.</p>
-            </div>
+            <a href="/withdraw" class="button cta-link secondary-cta">Withdraw</a>
+            <a href="/transactions" class="button cta-link secondary-cta">Create / review</a>
         </div>
     </section>
 
@@ -95,7 +95,7 @@
             <a href="/transactions" class="text-link">See all</a>
         </div>
 
-        <div class="activity-list">
+        <div class="activity-list" id="homeActivityList" data-activity-limit="3">
             {% for tx in transactions %}
                 <div class="activity-item">
                     <div>
