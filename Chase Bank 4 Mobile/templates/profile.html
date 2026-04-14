@@ -5,24 +5,42 @@
 {% block page_subtitle %}<p class="page-subtitle">Manage security preferences, notifications, and your app experience on this device.</p>{% endblock %}
 
 {% block content %}
+    <script id="profileSettingsSeed" type="application/json">{{ {"account_name": "Jordan Banks", "member_since": 2024}|tojson }}</script>
+
     <section class="card section-card">
         <div class="section-header compact">
             <div>
                 <p class="section-label">Profile</p>
-                <h2 class="section-title">Jordan Banks</h2>
+                <h2 class="section-title" id="profileAccountNameHeading">Jordan Banks</h2>
             </div>
-            <div class="profile-avatar">JB</div>
+            <div class="profile-avatar" id="profileAvatar">JB</div>
         </div>
 
         <div class="profile-grid">
             <div class="profile-stat">
                 <p class="stat-label">Member since</p>
-                <p class="stat-value">2024</p>
+                <p class="stat-value" id="profileMemberSinceValue">2024</p>
             </div>
             <div class="profile-stat">
                 <p class="stat-label">Security level</p>
                 <p class="stat-value">High</p>
             </div>
+        </div>
+
+        <form class="stack-form" id="profileSettingsForm">
+            <div class="field-group">
+                <label class="field-label" for="profileAccountNameInput">Account name</label>
+                <input id="profileAccountNameInput" type="text" maxlength="32" value="Jordan Banks" required>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="profileMemberSinceInput">Member since</label>
+                <input id="profileMemberSinceInput" type="number" inputmode="numeric" min="1900" max="2099" value="2024" required>
+            </div>
+        </form>
+
+        <div class="info-strip">
+            <p id="profileAutosaveStatus">Changes save automatically on this device as you type.</p>
         </div>
     </section>
 
@@ -79,6 +97,20 @@
                 </div>
                 <span class="settings-value">v1.0</span>
             </div>
+        </div>
+    </section>
+
+    <section class="card section-card">
+        <div class="section-header compact">
+            <div>
+                <p class="section-label">Activity tools</p>
+                <h2 class="section-title">Transactions</h2>
+            </div>
+        </div>
+
+        <a href="/transactions" class="button cta-link secondary-cta">Create / review</a>
+        <div class="info-strip">
+            <p>Open your transaction tools from Profile instead of the home quick actions.</p>
         </div>
     </section>
 {% endblock %}

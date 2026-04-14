@@ -5,6 +5,7 @@ const themeColorMeta = document.getElementById("themeColorMeta");
 const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 const storageKey = "NorthStar-secure-card";
 const deviceLedgerKey = "northstar-device-ledger-v1";
+const profileSettingsKey = "northstar-profile-settings-v1";
 const faceIdEnabledKey = "northstar-face-id-enabled";
 const faceIdUnlockedKey = "northstar-face-id-unlocked";
 let deferredPrompt = null;
@@ -407,6 +408,105 @@ function setupProfileSettings() {
         setFaceIdEnabled(nextValue);
         setFaceIdToggleState(nextValue);
     });
+}
+
+function getProfileSeed() {
+    const seedElement = document.getElementById("profileSettingsSeed");
+
+    if (!seedElement) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(seedElement.textContent);
+    } catch {
+        return null;
+    }
+}
+
+function getInitials(name) {
+    const parts = String(name || "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2);
+
+    if (!parts.length) {
+        return "NB";
+    }
+
+    return parts.map((part) => part.charAt(0).toUpperCase()).join("");
+}
+
+function loadProfileSettings(seed) {
+    try {
+        const stored = JSON.parse(localStorage.getItem(profileSettingsKey) || "null");
+        return {
+            accountName: stored?.accountName || seed.account_name || "Jordan Banks",
+            memberSince: String(stored?.memberSince || seed.member_since || "2024")
+        };
+    } catch {
+        return {
+            accountName: seed.account_name || "Jordan Banks",
+            memberSince: String(seed.member_since || "2024")
+        };
+    }
+}
+
+function saveProfileSettings(state) {
+    localStorage.setItem(profileSettingsKey, JSON.stringify(state));
+}
+
+function setupEditableProfile() {
+    const seed = getProfileSeed();
+    const nameInput = document.getElementById("profileAccountNameInput");
+    const yearInput = document.getElementById("profileMemberSinceInput");
+    const heading = document.getElementById("profileAccountNameHeading");
+    const avatar = document.getElementById("profileAvatar");
+    const memberSinceValue = document.getElementById("profileMemberSinceValue");
+    const autosaveStatus = document.getElementById("profileAutosaveStatus");
+
+    if (!seed || !nameInput || !yearInput || !heading || !avatar || !memberSinceValue || !autosaveStatus) {
+        return;
+    }
+
+    const state = loadProfileSettings(seed);
+
+    function applyProfileState() {
+        const accountName = state.accountName.trim() || seed.account_name || "Jordan Banks";
+        const memberSince = /^\d{4}$/.test(state.memberSince) ? state.memberSince : String(seed.member_since || "2024");
+
+        nameInput.value = accountName;
+        yearInput.value = memberSince;
+        heading.textContent = accountName;
+        avatar.textContent = getInitials(accountName);
+        memberSinceValue.textContent = memberSince;
+    }
+
+    function persistProfileState(statusMessage) {
+        saveProfileSettings(state);
+        applyProfileState();
+        autosaveStatus.textContent = statusMessage;
+    }
+
+    nameInput.addEventListener("input", () => {
+        state.accountName = nameInput.value.slice(0, 32);
+        persistProfileState("Account name saved automatically on this device.");
+    });
+
+    yearInput.addEventListener("input", () => {
+        state.memberSince = yearInput.value.replace(/\D/g, "").slice(0, 4);
+        persistProfileState("Member since year saved automatically on this device.");
+    });
+
+    yearInput.addEventListener("blur", () => {
+        if (!/^\d{4}$/.test(state.memberSince)) {
+            state.memberSince = String(seed.member_since || "2024");
+            persistProfileState("Member since reset to the last valid year.");
+        }
+    });
+
+    applyProfileState();
 }
 
 function setupFaceIdOverlay() {
@@ -1007,6 +1107,7 @@ registerInstallFlow();
 setupCardPreview();
 setupInteractiveCard();
 setupProfileSettings();
+setupEditableProfile();
 setupFaceIdOverlay();
 setupDeviceLedger();
 registerServiceWorker();
