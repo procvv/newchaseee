@@ -653,6 +653,10 @@ function getMergedTransactions(runtime) {
     return [...deviceTransactions, ...runtime.seed.transactions];
 }
 
+function getTransactionStatus(transaction) {
+    return transaction.signedAmount >= 0 ? "Completed deposit" : "Posted charge";
+}
+
 function matchesTransactionFilter(transaction, filterName) {
     if (filterName === "All") {
         return true;
@@ -693,28 +697,29 @@ function renderActivityList(container, transactions, richItems) {
         const amount = escapeHtml(formatSignedCurrency(tx.signedAmount));
         const categoryBadge = escapeHtml((tx.category || "A").charAt(0).toUpperCase());
         const amountClass = tx.signedAmount >= 0 ? "activity-amount positive" : "activity-amount";
+        const interactionAttrs = `type="button" class="activity-item activity-item-button${richItems ? " rich-item" : ""}" data-transaction-open="${escapeHtml(tx.id)}" aria-label="Open details for ${title}"`;
 
         if (richItems) {
             return `
-                <div class="activity-item rich-item">
+                <button ${interactionAttrs}>
                     <div class="transaction-leading">${categoryBadge}</div>
                     <div class="transaction-body">
                         <p class="activity-title">${title}</p>
                         <p class="activity-subtitle">${subtitle}</p>
                     </div>
                     <p class="${amountClass}">${amount}</p>
-                </div>
+                </button>
             `;
         }
 
         return `
-            <div class="activity-item">
+            <button ${interactionAttrs}>
                 <div>
                     <p class="activity-title">${title}</p>
                     <p class="activity-subtitle">${subtitle}</p>
                 </div>
                 <p class="${amountClass}">${amount}</p>
-            </div>
+            </button>
         `;
     }).join("");
 }
@@ -865,6 +870,111 @@ function setupWithdrawForm(runtime) {
     });
 }
 
+function ensureTransactionModal() {
+    let overlay = document.getElementById("transactionDetailOverlay");
+    if (overlay) {
+        return overlay;
+    }
+
+    overlay = document.createElement("section");
+    overlay.className = "transaction-detail-overlay is-hidden";
+    overlay.id = "transactionDetailOverlay";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.innerHTML = `
+        <div class="transaction-detail-backdrop" data-transaction-close></div>
+        <div class="transaction-detail-card" role="dialog" aria-modal="true" aria-labelledby="transactionDetailTitle">
+            <div class="section-header compact">
+                <div>
+                    <p class="section-label">Transaction details</p>
+                    <h2 class="section-title" id="transactionDetailTitle">Activity</h2>
+                </div>
+                <button class="secondary-button" type="button" data-transaction-close>Close</button>
+            </div>
+            <div class="detail-list">
+                <div class="detail-row">
+                    <span class="detail-label">Description</span>
+                    <span class="detail-value" id="transactionDetailDescription"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Amount</span>
+                    <span class="detail-value" id="transactionDetailAmount"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Category</span>
+                    <span class="detail-value" id="transactionDetailCategory"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">When</span>
+                    <span class="detail-value" id="transactionDetailTime"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value" id="transactionDetailStatus"></span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function closeTransactionModal() {
+    const overlay = document.getElementById("transactionDetailOverlay");
+    if (!overlay) {
+        return;
+    }
+
+    overlay.classList.add("is-hidden");
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("transaction-detail-open");
+}
+
+function openTransactionModal(transaction) {
+    const overlay = ensureTransactionModal();
+
+    document.getElementById("transactionDetailTitle").textContent = transaction.title;
+    document.getElementById("transactionDetailDescription").textContent = transaction.title;
+
+    const amountElement = document.getElementById("transactionDetailAmount");
+    amountElement.textContent = formatSignedCurrency(transaction.signedAmount);
+    amountElement.className = transaction.signedAmount >= 0 ? "detail-value success" : "detail-value";
+
+    document.getElementById("transactionDetailCategory").textContent = transaction.category || "Activity";
+    document.getElementById("transactionDetailTime").textContent = transaction.subtitle || formatActivityTime(transaction.timestamp);
+    document.getElementById("transactionDetailStatus").textContent = getTransactionStatus(transaction);
+
+    overlay.classList.remove("is-hidden");
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("transaction-detail-open");
+}
+
+function setupTransactionInteractions(runtime) {
+    ensureTransactionModal();
+
+    document.addEventListener("click", (event) => {
+        const openButton = event.target.closest("[data-transaction-open]");
+        if (openButton) {
+            const transactionId = openButton.dataset.transactionOpen;
+            const transaction = getMergedTransactions(runtime).find((item) => item.id === transactionId);
+            if (transaction) {
+                openTransactionModal(transaction);
+            }
+            return;
+        }
+
+        if (event.target.closest("[data-transaction-close]")) {
+            closeTransactionModal();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeTransactionModal();
+        }
+    });
+}
+
 function setupDeviceLedger() {
     const seed = getLedgerSeed();
 
@@ -889,6 +999,7 @@ function setupDeviceLedger() {
     setupTransactionFilters(runtime);
     setupManualTransactionForm(runtime);
     setupWithdrawForm(runtime);
+    setupTransactionInteractions(runtime);
 }
 
 registerThemeListener();

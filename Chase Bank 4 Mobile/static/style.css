@@ -604,9 +604,37 @@ body.face-id-locked {
     border-bottom: 1px solid var(--line);
 }
 
+.activity-item-button {
+    width: 100%;
+    padding: 0 0 14px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.activity-item-button:hover,
+.activity-item-button:focus-visible {
+    opacity: 0.92;
+    transform: translateY(-1px);
+}
+
+.activity-item-button:focus-visible {
+    outline: 2px solid rgba(11, 86, 179, 0.34);
+    outline-offset: 8px;
+    border-radius: 16px;
+}
+
 .activity-item:last-child {
     padding-bottom: 0;
     border-bottom: none;
+}
+
+.activity-item-button:last-child {
+    padding-bottom: 0;
 }
 
 .rich-item {
@@ -863,6 +891,43 @@ select:focus {
 
 .success-strip {
     background: var(--positive-bg);
+}
+
+body.transaction-detail-open {
+    overflow: hidden;
+}
+
+.transaction-detail-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: end center;
+    padding: 18px;
+}
+
+.transaction-detail-overlay.is-hidden {
+    display: none;
+}
+
+.transaction-detail-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 17, 29, 0.5);
+    backdrop-filter: blur(12px);
+}
+
+.transaction-detail-card {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 430px);
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(20px);
+    animation: riseIn 0.24s ease;
 }
 
 .wallet-grid {
