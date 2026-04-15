@@ -34,7 +34,13 @@
                 <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
                 {% block page_subtitle %}{% endblock %}
             </div>
-            <div class="brand-mark" aria-hidden="true">C</div>
+            <div class="topbar-actions">
+                <button class="icon-button" type="button" id="notificationCenterButton" aria-label="Open notifications">
+                    <span class="icon-button-glyph">N</span>
+                    <span class="notification-badge is-hidden" id="notificationCenterCount">0</span>
+                </button>
+                <div class="brand-mark" aria-hidden="true">C</div>
+            </div>
         </header>
 
         <section class="install-banner is-hidden" id="installBanner" aria-live="polite">

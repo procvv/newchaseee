@@ -6,6 +6,7 @@ const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 const storageKey = "NorthStar-secure-card";
 const deviceLedgerKey = "northstar-device-ledger-v1";
 const profileSettingsKey = "northstar-profile-settings-v1";
+const notificationCenterKey = "northstar-notification-center-v1";
 const faceIdEnabledKey = "northstar-face-id-enabled";
 const faceIdUnlockedKey = "northstar-face-id-unlocked";
 let deferredPrompt = null;
@@ -32,6 +33,13 @@ const autoChargeCatalog = [
     { title: "Corner market", category: "Shopping", minAmount: 8.45, maxAmount: 27.6 },
     { title: "Utility autopay", category: "Bills", minAmount: 42.1, maxAmount: 118.4 }
 ];
+const accentThemes = [
+    { id: "ocean", label: "Ocean", swatch: "linear-gradient(180deg, #0b56b3, #083e83)" },
+    { id: "pine", label: "Pine", swatch: "linear-gradient(180deg, #1e7b5d, #155640)" },
+    { id: "ember", label: "Ember", swatch: "linear-gradient(180deg, #b95a2a, #7c3b18)" },
+    { id: "midnight", label: "Midnight", swatch: "linear-gradient(180deg, #4f63d9, #3341a4)" }
+];
+const walletProviders = ["Cash App", "Venmo", "Apple Pay"];
 
 function syncThemeColor() {
     if (!themeColorMeta) {
@@ -152,9 +160,10 @@ function buildExpiry() {
 
 function generateDeviceCardDefaults() {
     const theme = cardThemes[Math.floor(Math.random() * cardThemes.length)];
+    const profileName = (loadAppSettings().accountName || sampleNames[Math.floor(Math.random() * sampleNames.length)]).trim().toUpperCase();
     return {
         number: buildCardNumber(),
-        name: sampleNames[Math.floor(Math.random() * sampleNames.length)],
+        name: profileName || sampleNames[Math.floor(Math.random() * sampleNames.length)],
         expiry: buildExpiry(),
         network: theme.network,
         theme,
@@ -173,6 +182,15 @@ function applyCardTheme(cardElement, theme) {
     cardElement.style.setProperty("--card-mid", theme.mid);
     cardElement.style.setProperty("--card-end", theme.end);
     cardElement.style.setProperty("--card-glow", theme.glow);
+}
+
+function buildCardThemeButton(theme, isActive) {
+    return `
+        <button class="choice-chip${isActive ? " is-active" : ""}" type="button" data-card-theme="${theme.network}">
+            <span class="choice-chip-swatch" style="background:linear-gradient(180deg, ${theme.start}, ${theme.end})"></span>
+            <span>${theme.network}</span>
+        </button>
+    `;
 }
 
 function maskCardNumber(number) {
@@ -198,6 +216,7 @@ function setupInteractiveCard() {
     const networkDisplay = document.getElementById("cardNetworkDisplay");
     const numberInput = document.getElementById("cardNumberInput");
     const nameInput = document.getElementById("cardNameInput");
+    const themePicker = document.getElementById("cardThemePicker");
     const toggleButton = document.getElementById("toggleCardNumber");
 
     if (!card || !stage || !controlsPanel || !numberDisplay || !nameDisplay || !expiryDisplay || !networkDisplay || !numberInput || !nameInput || !toggleButton) {
@@ -205,6 +224,14 @@ function setupInteractiveCard() {
     }
 
     const state = loadCardState();
+
+    function renderThemePicker() {
+        if (!themePicker) {
+            return;
+        }
+
+        themePicker.innerHTML = cardThemes.map((theme) => buildCardThemeButton(theme, theme.network === state.network)).join("");
+    }
 
     function applyState() {
         const formattedNumber = formatCardNumber(state.number);
@@ -221,6 +248,7 @@ function setupInteractiveCard() {
         card.style.left = `${state.x}px`;
         card.style.top = `${state.y}px`;
         applyCardTheme(card, state.theme);
+        renderThemePicker();
         saveCardState(state);
     }
 
@@ -253,6 +281,8 @@ function setupInteractiveCard() {
         pointerStartX = event.clientX;
         pointerStartY = event.clientY;
         movedCard = false;
+        card.classList.remove("is-tilting");
+        card.style.transform = "";
         card.classList.add("dragging");
         if (card.setPointerCapture) {
             card.setPointerCapture(event.pointerId);
@@ -273,12 +303,35 @@ function setupInteractiveCard() {
         card.style.top = `${state.y}px`;
     });
 
+    card.addEventListener("mousemove", (event) => {
+        if (card.classList.contains("dragging")) {
+            return;
+        }
+
+        const rect = card.getBoundingClientRect();
+        const rotateY = ((event.clientX - rect.left) / rect.width - 0.5) * 12;
+        const rotateX = ((event.clientY - rect.top) / rect.height - 0.5) * -10;
+        card.classList.add("is-tilting");
+        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+
+    card.addEventListener("mouseleave", () => {
+        if (card.classList.contains("dragging")) {
+            return;
+        }
+
+        card.classList.remove("is-tilting");
+        card.style.transform = "";
+    });
+
     function endDrag() {
         if (!card.classList.contains("dragging")) {
             return;
         }
 
         card.classList.remove("dragging");
+        card.classList.remove("is-tilting");
+        card.style.transform = "";
         saveCardState(state);
 
         if (movedCard) {
@@ -312,6 +365,25 @@ function setupInteractiveCard() {
         state.hidden = !state.hidden;
         applyState();
     });
+
+    if (themePicker) {
+        themePicker.addEventListener("click", (event) => {
+            const themeButton = event.target.closest("[data-card-theme]");
+            if (!themeButton) {
+                return;
+            }
+
+            const selectedTheme = cardThemes.find((theme) => theme.network === themeButton.dataset.cardTheme);
+            if (!selectedTheme) {
+                return;
+            }
+
+            controlsPanel.classList.add("active");
+            state.theme = selectedTheme;
+            state.network = selectedTheme.network;
+            applyState();
+        });
+    }
 
     numberInput.addEventListener("input", (event) => {
         controlsPanel.classList.add("active");
@@ -439,22 +511,312 @@ function getInitials(name) {
 }
 
 function loadProfileSettings(seed) {
+    const fallbackSeed = seed || {};
+
     try {
         const stored = JSON.parse(localStorage.getItem(profileSettingsKey) || "null");
         return {
-            accountName: stored?.accountName ?? seed.account_name ?? "Jordan Banks",
-            memberSince: String(stored?.memberSince ?? seed.member_since ?? "2024")
+            accountName: stored?.accountName ?? fallbackSeed.account_name ?? "Jordan Banks",
+            memberSince: String(stored?.memberSince ?? fallbackSeed.member_since ?? "2024"),
+            accentTheme: stored?.accentTheme ?? "ocean",
+            preferredWallet: stored?.preferredWallet ?? "Cash App",
+            onboarded: stored?.onboarded ?? false
         };
     } catch {
         return {
-            accountName: seed.account_name ?? "Jordan Banks",
-            memberSince: String(seed.member_since ?? "2024")
+            accountName: fallbackSeed.account_name ?? "Jordan Banks",
+            memberSince: String(fallbackSeed.member_since ?? "2024"),
+            accentTheme: "ocean",
+            preferredWallet: "Cash App",
+            onboarded: false
         };
     }
 }
 
 function saveProfileSettings(state) {
     localStorage.setItem(profileSettingsKey, JSON.stringify(state));
+}
+
+function loadAppSettings() {
+    return loadProfileSettings(null);
+}
+
+function applyAccentTheme(themeId) {
+    document.body.dataset.accentTheme = themeId || "ocean";
+    syncThemeColor();
+}
+
+function buildChoiceChip({ id, label, swatch }, activeId, groupName) {
+    const activeClass = id === activeId ? " is-active" : "";
+    const swatchMarkup = swatch
+        ? `<span class="choice-chip-swatch" style="background:${swatch}"></span>`
+        : "";
+
+    return `
+        <button class="choice-chip${activeClass}" type="button" data-choice-group="${groupName}" data-choice-value="${id}">
+            ${swatchMarkup}
+            <span>${label}</span>
+        </button>
+    `;
+}
+
+function loadNotifications() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(notificationCenterKey) || "[]");
+        return Array.isArray(saved) ? saved : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveNotifications(items) {
+    localStorage.setItem(notificationCenterKey, JSON.stringify(items));
+}
+
+function pushNotification(item) {
+    const notifications = loadNotifications();
+    notifications.unshift({
+        id: item.id || `notice-${Date.now()}-${randomDigits(4)}`,
+        title: item.title,
+        body: item.body,
+        timestamp: item.timestamp || Date.now()
+    });
+    saveNotifications(notifications.slice(0, 25));
+    renderNotificationCenter();
+}
+
+function ensureNotificationCenter() {
+    let overlay = document.getElementById("notificationCenterOverlay");
+    if (overlay) {
+        return overlay;
+    }
+
+    overlay = document.createElement("section");
+    overlay.className = "notification-center-overlay is-hidden";
+    overlay.id = "notificationCenterOverlay";
+    overlay.innerHTML = `
+        <div class="notification-center-backdrop" data-notification-close></div>
+        <div class="notification-center-panel">
+            <div class="section-header compact">
+                <div>
+                    <p class="section-label">Inbox</p>
+                    <h2 class="section-title">Notifications</h2>
+                </div>
+                <button class="secondary-button" type="button" id="clearNotificationsButton">Clear</button>
+            </div>
+            <div class="notification-list" id="notificationList"></div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function renderNotificationCenter() {
+    ensureNotificationCenter();
+
+    const notifications = loadNotifications();
+    const count = document.getElementById("notificationCenterCount");
+    const list = document.getElementById("notificationList");
+
+    if (count) {
+        count.textContent = String(notifications.length);
+        count.classList.toggle("is-hidden", notifications.length === 0);
+    }
+
+    if (!list) {
+        return;
+    }
+
+    if (!notifications.length) {
+        list.innerHTML = `
+            <div class="info-strip">
+                <p>No notifications yet. Charges, transfers, and setup updates will appear here.</p>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = notifications.map((item) => `
+        <article class="notification-item">
+            <p class="notification-item-title">${escapeHtml(item.title)}</p>
+            <p class="notification-item-copy">${escapeHtml(item.body)}</p>
+            <p class="notification-item-time">${escapeHtml(formatActivityTime(item.timestamp))}</p>
+        </article>
+    `).join("");
+}
+
+function openNotificationCenter() {
+    const overlay = ensureNotificationCenter();
+    overlay.classList.remove("is-hidden");
+    document.body.classList.add("notification-center-open");
+}
+
+function closeNotificationCenter() {
+    const overlay = document.getElementById("notificationCenterOverlay");
+    if (!overlay) {
+        return;
+    }
+
+    overlay.classList.add("is-hidden");
+    document.body.classList.remove("notification-center-open");
+}
+
+function setupNotificationCenter() {
+    const button = document.getElementById("notificationCenterButton");
+
+    if (!button) {
+        return;
+    }
+
+    renderNotificationCenter();
+
+    button.addEventListener("click", () => {
+        openNotificationCenter();
+    });
+
+    document.addEventListener("click", (event) => {
+        if (event.target.closest("[data-notification-close]")) {
+            closeNotificationCenter();
+        }
+
+        if (event.target.id === "clearNotificationsButton") {
+            saveNotifications([]);
+            renderNotificationCenter();
+        }
+    });
+}
+
+function ensureOnboardingOverlay() {
+    let overlay = document.getElementById("onboardingOverlay");
+    if (overlay) {
+        return overlay;
+    }
+
+    overlay = document.createElement("section");
+    overlay.className = "onboarding-overlay is-hidden";
+    overlay.id = "onboardingOverlay";
+    overlay.innerHTML = `
+        <div class="onboarding-backdrop"></div>
+        <div class="onboarding-card">
+            <div class="onboarding-hero">
+                <span class="onboarding-chip">First run</span>
+                <h2 class="section-title">Set up this device</h2>
+                <p class="onboarding-copy">Choose a display name, an accent theme, and the wallet you want ready by default.</p>
+            </div>
+            <form class="stack-form" id="onboardingForm">
+                <div class="field-group">
+                    <label class="field-label" for="onboardingAccountName">Account name</label>
+                    <input id="onboardingAccountName" type="text" maxlength="32" placeholder="Jordan Banks" required>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Accent theme</label>
+                    <div class="choice-grid" id="onboardingThemePicker"></div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Preferred wallet</label>
+                    <div class="choice-grid" id="onboardingWalletPicker"></div>
+                </div>
+                <button class="button" type="submit">Finish setup</button>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function renderThemeChoices(container, activeTheme, targetGroup) {
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = accentThemes.map((theme) => buildChoiceChip({
+        id: theme.id,
+        label: theme.label,
+        swatch: theme.swatch
+    }, activeTheme, targetGroup)).join("");
+}
+
+function renderWalletChoices(container, activeWallet, targetGroup) {
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = walletProviders.map((wallet) => buildChoiceChip({
+        id: wallet,
+        label: wallet
+    }, activeWallet, targetGroup)).join("");
+}
+
+function setupOnboardingFlow() {
+    const settings = loadAppSettings();
+
+    applyAccentTheme(settings.accentTheme);
+    renderNotificationCenter();
+
+    if (settings.onboarded) {
+        return;
+    }
+
+    const overlay = ensureOnboardingOverlay();
+    const form = document.getElementById("onboardingForm");
+    const nameInput = document.getElementById("onboardingAccountName");
+    const themePicker = document.getElementById("onboardingThemePicker");
+    const walletPicker = document.getElementById("onboardingWalletPicker");
+
+    if (!form || !nameInput || !themePicker || !walletPicker) {
+        return;
+    }
+
+    let selectedTheme = settings.accentTheme;
+    let selectedWallet = settings.preferredWallet;
+
+    nameInput.value = settings.accountName;
+    renderThemeChoices(themePicker, selectedTheme, "onboarding-theme");
+    renderWalletChoices(walletPicker, selectedWallet, "onboarding-wallet");
+
+    overlay.classList.remove("is-hidden");
+    document.body.classList.add("onboarding-open");
+
+    overlay.addEventListener("click", (event) => {
+        const themeButton = event.target.closest('[data-choice-group="onboarding-theme"]');
+        const walletButton = event.target.closest('[data-choice-group="onboarding-wallet"]');
+
+        if (themeButton) {
+            selectedTheme = themeButton.dataset.choiceValue;
+            applyAccentTheme(selectedTheme);
+            renderThemeChoices(themePicker, selectedTheme, "onboarding-theme");
+            return;
+        }
+
+        if (walletButton) {
+            selectedWallet = walletButton.dataset.choiceValue;
+            renderWalletChoices(walletPicker, selectedWallet, "onboarding-wallet");
+        }
+    });
+
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const nextSettings = {
+            ...settings,
+            accountName: nameInput.value.trim() || settings.accountName,
+            accentTheme: selectedTheme,
+            preferredWallet: selectedWallet,
+            onboarded: true
+        };
+
+        saveProfileSettings(nextSettings);
+        applyAccentTheme(nextSettings.accentTheme);
+        overlay.classList.add("is-hidden");
+        document.body.classList.remove("onboarding-open");
+        pushNotification({
+            title: "Setup complete",
+            body: `${nextSettings.accountName || "This device"} is ready with ${nextSettings.preferredWallet} selected.`
+        });
+        window.location.reload();
+    });
 }
 
 function setupEditableProfile() {
@@ -466,6 +828,8 @@ function setupEditableProfile() {
     const memberSinceValue = document.getElementById("profileMemberSinceValue");
     const autosaveStatus = document.getElementById("profileAutosaveStatus");
     const saveBadge = document.getElementById("profileSaveBadge");
+    const themePicker = document.getElementById("appThemePicker");
+    const walletPicker = document.getElementById("preferredWalletPicker");
 
     if (!seed || !nameInput || !yearInput || !heading || !avatar || !memberSinceValue || !autosaveStatus || !saveBadge) {
         return;
@@ -508,10 +872,37 @@ function setupEditableProfile() {
         persistProfileState("Member since year saved automatically on this device.");
     });
 
+    if (themePicker) {
+        renderThemeChoices(themePicker, state.accentTheme, "profile-theme");
+    }
+
+    if (walletPicker) {
+        renderWalletChoices(walletPicker, state.preferredWallet, "profile-wallet");
+    }
+
+    document.addEventListener("click", (event) => {
+        const themeButton = event.target.closest('[data-choice-group="profile-theme"]');
+        const walletButton = event.target.closest('[data-choice-group="profile-wallet"]');
+
+        if (themeButton && themePicker) {
+            state.accentTheme = themeButton.dataset.choiceValue;
+            applyAccentTheme(state.accentTheme);
+            renderThemeChoices(themePicker, state.accentTheme, "profile-theme");
+            persistProfileState("Accent theme saved automatically on this device.");
+        }
+
+        if (walletButton && walletPicker) {
+            state.preferredWallet = walletButton.dataset.choiceValue;
+            renderWalletChoices(walletPicker, state.preferredWallet, "profile-wallet");
+            persistProfileState("Preferred wallet saved automatically on this device.");
+        }
+    });
+
     nameInput.value = state.accountName;
     yearInput.value = state.memberSince;
     updateProfileDisplay();
     saveBadge.textContent = "Saved";
+    applyAccentTheme(state.accentTheme);
 }
 
 function setupFaceIdOverlay() {
@@ -693,14 +1084,17 @@ function applyDueAutoCharges(state) {
     let didChange = false;
     let guard = 0;
     const now = Date.now();
+    const addedCharges = [];
 
     if (!state.nextAutoChargeAt) {
         state.nextAutoChargeAt = now + buildAutoChargeIntervalMs();
-        return true;
+        return addedCharges;
     }
 
     while (state.nextAutoChargeAt <= now && guard < 12) {
-        state.deviceTransactions.unshift(buildAutoCharge(state.nextAutoChargeAt));
+        const charge = buildAutoCharge(state.nextAutoChargeAt);
+        state.deviceTransactions.unshift(charge);
+        addedCharges.push(charge);
         state.nextAutoChargeAt += buildAutoChargeIntervalMs();
         didChange = true;
         guard += 1;
@@ -716,7 +1110,11 @@ function applyDueAutoCharges(state) {
         didChange = true;
     }
 
-    return didChange;
+    if (!didChange) {
+        return addedCharges;
+    }
+
+    return addedCharges;
 }
 
 function getLiveBalance(runtime) {
@@ -766,6 +1164,58 @@ function getTransactionSourceLabel(transaction) {
     return transaction.seed ? "Bank feed" : "Device activity";
 }
 
+function getTransactionPresentation(transaction) {
+    const title = (transaction.title || "").toLowerCase();
+    const category = (transaction.category || "activity").toLowerCase();
+
+    if (title.includes("streamflix")) {
+        return { icon: "SF", tone: "subscription", chip: "Streaming", merchant: "StreamFlix" };
+    }
+
+    if (title.includes("cloudbox")) {
+        return { icon: "CB", tone: "subscription", chip: "Storage", merchant: "CloudBox" };
+    }
+
+    if (title.includes("fitness")) {
+        return { icon: "FT", tone: "subscription", chip: "Fitness", merchant: "Fitness+" };
+    }
+
+    if (title.includes("cash out") || category === "transfer") {
+        return { icon: "TR", tone: "transfer", chip: "Transfer", merchant: "Wallet transfer" };
+    }
+
+    if (category === "bills") {
+        return { icon: "UT", tone: "bills", chip: "Bills", merchant: "Utility autopay" };
+    }
+
+    if (category === "shopping") {
+        return { icon: "SH", tone: "shopping", chip: "Shopping", merchant: "Retail purchase" };
+    }
+
+    if (category === "food") {
+        return { icon: "FD", tone: "food", chip: "Dining", merchant: "Food order" };
+    }
+
+    if (category === "income") {
+        return { icon: "PY", tone: "income", chip: "Income", merchant: "Payroll" };
+    }
+
+    if (category === "deposit") {
+        return { icon: "DP", tone: "deposit", chip: "Deposit", merchant: "Deposit" };
+    }
+
+    return { icon: "AC", tone: "shopping", chip: transaction.category || "Activity", merchant: transaction.title };
+}
+
+function buildNotificationForTransaction(transaction, overrideTitle) {
+    const presentation = getTransactionPresentation(transaction);
+    return {
+        title: overrideTitle || transaction.title,
+        body: `${presentation.chip} ${formatSignedCurrency(transaction.signedAmount)} on ${getTransactionSourceLabel(transaction).toLowerCase()}.`,
+        timestamp: transaction.timestamp
+    };
+}
+
 function matchesTransactionFilter(transaction, filterName) {
     if (filterName === "All") {
         return true;
@@ -804,17 +1254,21 @@ function renderActivityList(container, transactions, richItems) {
         const title = escapeHtml(tx.title);
         const subtitle = escapeHtml(tx.subtitle || formatActivityTime(tx.timestamp));
         const amount = escapeHtml(formatSignedCurrency(tx.signedAmount));
-        const categoryBadge = escapeHtml((tx.category || "A").charAt(0).toUpperCase());
+        const presentation = getTransactionPresentation(tx);
+        const categoryBadge = escapeHtml(presentation.icon);
         const amountClass = tx.signedAmount >= 0 ? "activity-amount positive" : "activity-amount";
         const interactionAttrs = `type="button" class="activity-item activity-item-button${richItems ? " rich-item" : ""}" data-transaction-open="${escapeHtml(tx.id)}" aria-label="Open details for ${title}"`;
 
         if (richItems) {
             return `
                 <button ${interactionAttrs}>
-                    <div class="transaction-leading">${categoryBadge}</div>
+                    <div class="transaction-leading ${escapeHtml(presentation.tone)}">${categoryBadge}</div>
                     <div class="transaction-body">
                         <p class="activity-title">${title}</p>
-                        <p class="activity-subtitle">${subtitle}</p>
+                        <div class="transaction-meta-row">
+                            <p class="activity-subtitle">${subtitle}</p>
+                            <span class="activity-chip">${escapeHtml(presentation.chip)}</span>
+                        </div>
                     </div>
                     <p class="${amountClass}">${amount}</p>
                 </button>
@@ -888,10 +1342,43 @@ function updateLiveBalanceText(runtime) {
     runtime.lastRenderedBalance = liveBalance;
 }
 
+function renderAnalytics(transactions) {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
+    const weeklySpend = transactions
+        .filter((tx) => tx.timestamp >= weekAgo && tx.signedAmount < 0)
+        .reduce((sum, tx) => sum + Math.abs(tx.signedAmount), 0);
+    const subscriptionSpend = transactions
+        .filter((tx) => (tx.category || "").toLowerCase() === "subscription" && tx.signedAmount < 0)
+        .reduce((sum, tx) => sum + Math.abs(tx.signedAmount), 0);
+    const moneyOutToday = transactions
+        .filter((tx) => tx.timestamp >= startOfToday && tx.signedAmount < 0)
+        .reduce((sum, tx) => sum + Math.abs(tx.signedAmount), 0);
+
+    const weeklySpendValue = document.getElementById("weeklySpendValue");
+    const subscriptionSpendValue = document.getElementById("subscriptionSpendValue");
+    const moneyOutTodayValue = document.getElementById("moneyOutTodayValue");
+
+    if (weeklySpendValue) {
+        weeklySpendValue.textContent = formatCurrency(weeklySpend);
+    }
+
+    if (subscriptionSpendValue) {
+        subscriptionSpendValue.textContent = formatCurrency(subscriptionSpend);
+    }
+
+    if (moneyOutTodayValue) {
+        moneyOutTodayValue.textContent = formatCurrency(moneyOutToday);
+    }
+}
+
 function renderLedger(runtime) {
     updateLiveBalanceText(runtime);
 
     const mergedTransactions = getMergedTransactions(runtime);
+    renderAnalytics(mergedTransactions);
     const homeList = document.getElementById("homeActivityList");
     if (homeList) {
         const limit = Number.parseInt(homeList.dataset.activityLimit || "3", 10);
@@ -914,10 +1401,12 @@ function persistAndRenderLedger(runtime) {
 }
 
 function addDeviceTransaction(runtime, transaction) {
-    runtime.state.deviceTransactions.unshift(createLedgerTransaction(transaction));
+    const createdTransaction = createLedgerTransaction(transaction);
+    runtime.state.deviceTransactions.unshift(createdTransaction);
     if (runtime.state.deviceTransactions.length > 60) {
         runtime.state.deviceTransactions = runtime.state.deviceTransactions.slice(0, 60);
     }
+    pushNotification(buildNotificationForTransaction(createdTransaction));
     persistAndRenderLedger(runtime);
 }
 
@@ -974,12 +1463,81 @@ function setupManualTransactionForm(runtime) {
     });
 }
 
+function ensureWalletFlowModal() {
+    let overlay = document.getElementById("walletFlowOverlay");
+    if (overlay) {
+        return overlay;
+    }
+
+    overlay = document.createElement("section");
+    overlay.className = "wallet-flow-overlay is-hidden";
+    overlay.id = "walletFlowOverlay";
+    overlay.innerHTML = `
+        <div class="wallet-flow-backdrop" data-wallet-flow-close></div>
+        <div class="wallet-flow-card">
+            <p class="section-label" id="walletFlowKicker">Review</p>
+            <h2 class="section-title" id="walletFlowTitle">Confirm transfer</h2>
+            <p class="onboarding-copy" id="walletFlowCopy">Check the wallet details before sending.</p>
+            <div class="wallet-flow-summary" id="walletFlowSummary"></div>
+            <div class="wallet-flow-progress is-hidden" id="walletFlowProgress">
+                <div class="wallet-flow-progress-bar" id="walletFlowProgressBar"></div>
+            </div>
+            <div class="action-row">
+                <button class="secondary-button" type="button" id="walletFlowSecondary">Cancel</button>
+                <button class="button" type="button" id="walletFlowPrimary">Confirm</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function setWalletFlowState({ kicker, title, copy, rows, primaryLabel, secondaryLabel, hideSecondary, showProgress }) {
+    ensureWalletFlowModal();
+
+    document.getElementById("walletFlowKicker").textContent = kicker;
+    document.getElementById("walletFlowTitle").textContent = title;
+    document.getElementById("walletFlowCopy").textContent = copy;
+    document.getElementById("walletFlowSummary").innerHTML = rows.map((row) => `
+        <div class="wallet-flow-row">
+            <span class="detail-label">${escapeHtml(row.label)}</span>
+            <span class="detail-value">${escapeHtml(row.value)}</span>
+        </div>
+    `).join("");
+    document.getElementById("walletFlowPrimary").textContent = primaryLabel;
+    document.getElementById("walletFlowSecondary").textContent = secondaryLabel || "Cancel";
+    document.getElementById("walletFlowSecondary").style.display = hideSecondary ? "none" : "";
+    document.getElementById("walletFlowProgress").classList.toggle("is-hidden", !showProgress);
+}
+
+function openWalletFlow() {
+    ensureWalletFlowModal().classList.remove("is-hidden");
+    document.body.classList.add("wallet-flow-open");
+}
+
+function closeWalletFlow() {
+    const overlay = document.getElementById("walletFlowOverlay");
+    if (!overlay) {
+        return;
+    }
+
+    overlay.classList.add("is-hidden");
+    document.body.classList.remove("wallet-flow-open");
+}
+
 function setupWithdrawForm(runtime) {
     const form = document.getElementById("withdrawForm");
     const status = document.getElementById("withdrawStatus");
 
     if (!form || !status) {
         return;
+    }
+
+    const preferredWallet = loadAppSettings().preferredWallet;
+    const defaultWallet = form.querySelector(`input[name="withdrawProvider"][value="${preferredWallet}"]`);
+    if (defaultWallet) {
+        defaultWallet.checked = true;
     }
 
     form.addEventListener("submit", (event) => {
@@ -999,19 +1557,90 @@ function setupWithdrawForm(runtime) {
             return;
         }
 
-        const destination = handle ? ` to ${handle}` : "";
-        addDeviceTransaction(runtime, {
-            title: `${provider} cash out${destination}`,
-            signedAmount: -amount,
-            category: "Transfer"
+        const destination = handle || `${provider.toLowerCase()}-demo`;
+        setWalletFlowState({
+            kicker: "Confirm cash out",
+            title: `Send ${formatCurrency(amount)} to ${provider}?`,
+            copy: "This is a device-only demo transfer. Review the destination before you continue.",
+            rows: [
+                { label: "Wallet", value: provider },
+                { label: "Handle", value: destination },
+                { label: "Amount", value: formatCurrency(amount) },
+                { label: "Fee", value: "$0.00" }
+            ],
+            primaryLabel: "Send now",
+            secondaryLabel: "Cancel",
+            hideSecondary: false,
+            showProgress: false
         });
+        openWalletFlow();
 
-        status.textContent = `${formatCurrency(amount)} sent to fake ${provider}${destination}.`;
-        form.reset();
+        const primaryButton = document.getElementById("walletFlowPrimary");
+        const secondaryButton = document.getElementById("walletFlowSecondary");
+        const progressBar = document.getElementById("walletFlowProgressBar");
 
-        const firstProvider = form.querySelector('input[name="withdrawProvider"]');
-        if (firstProvider) {
-            firstProvider.checked = true;
+        primaryButton.onclick = async () => {
+            setWalletFlowState({
+                kicker: "Processing",
+                title: `Sending to ${provider}`,
+                copy: "Creating a fake wallet receipt and posting the transfer now.",
+                rows: [
+                    { label: "Wallet", value: provider },
+                    { label: "Handle", value: destination },
+                    { label: "Amount", value: formatCurrency(amount) }
+                ],
+                primaryLabel: "Working...",
+                secondaryLabel: "Cancel",
+                hideSecondary: true,
+                showProgress: true
+            });
+            progressBar.style.width = "0%";
+            window.setTimeout(() => {
+                progressBar.style.width = "100%";
+            }, 30);
+            await new Promise((resolve) => window.setTimeout(resolve, 1100));
+
+            addDeviceTransaction(runtime, {
+                title: `${provider} cash out to ${destination}`,
+                signedAmount: -amount,
+                category: "Transfer"
+            });
+
+            setWalletFlowState({
+                kicker: "Success",
+                title: `${provider} receipt ready`,
+                copy: "The fake wallet transfer finished and the live balance already reflects it.",
+                rows: [
+                    { label: "Wallet", value: provider },
+                    { label: "Handle", value: destination },
+                    { label: "Amount", value: formatCurrency(amount) },
+                    { label: "Status", value: "Completed" }
+                ],
+                primaryLabel: "Done",
+                secondaryLabel: "Close",
+                hideSecondary: true,
+                showProgress: false
+            });
+
+            primaryButton.onclick = () => {
+                closeWalletFlow();
+            };
+
+            status.textContent = `${formatCurrency(amount)} sent to fake ${provider} at ${destination}.`;
+            form.reset();
+            if (defaultWallet) {
+                defaultWallet.checked = true;
+            }
+        };
+
+        secondaryButton.onclick = () => {
+            closeWalletFlow();
+        };
+    });
+
+    document.addEventListener("click", (event) => {
+        if (event.target.closest("[data-wallet-flow-close]")) {
+            closeWalletFlow();
         }
     });
 }
@@ -1086,19 +1715,20 @@ function closeTransactionModal() {
 
 function openTransactionModal(transaction) {
     const overlay = ensureTransactionModal();
+    const presentation = getTransactionPresentation(transaction);
 
     document.getElementById("transactionDetailTitle").textContent = transaction.title;
-    document.getElementById("transactionDetailDescription").textContent = transaction.title;
-    document.getElementById("transactionDetailIcon").textContent = (transaction.category || "A").charAt(0).toUpperCase();
+    document.getElementById("transactionDetailDescription").textContent = presentation.merchant;
+    document.getElementById("transactionDetailIcon").textContent = presentation.icon;
     document.getElementById("transactionDetailKicker").textContent = getTransactionSourceLabel(transaction);
     document.getElementById("transactionDetailHeroAmount").textContent = formatSignedCurrency(transaction.signedAmount);
-    document.getElementById("transactionDetailBadge").textContent = `${transaction.category || "Activity"} · ${getTransactionStatus(transaction)}`;
+    document.getElementById("transactionDetailBadge").textContent = `${presentation.chip} | ${getTransactionStatus(transaction)}`;
 
     const amountElement = document.getElementById("transactionDetailAmount");
     amountElement.textContent = formatSignedCurrency(transaction.signedAmount);
     amountElement.className = transaction.signedAmount >= 0 ? "detail-value success" : "detail-value";
 
-    document.getElementById("transactionDetailCategory").textContent = transaction.category || "Activity";
+    document.getElementById("transactionDetailCategory").textContent = presentation.chip;
     document.getElementById("transactionDetailTime").textContent = transaction.subtitle || formatActivityTime(transaction.timestamp);
     document.getElementById("transactionDetailStatus").textContent = getTransactionStatus(transaction);
 
@@ -1149,8 +1779,12 @@ function setupDeviceLedger() {
         activeFilter: "All"
     };
 
-    if (applyDueAutoCharges(runtime.state)) {
+    const autoCharges = applyDueAutoCharges(runtime.state);
+    if (autoCharges.length) {
         saveLedgerState(runtime.state);
+        autoCharges.slice(0, 3).forEach((charge) => {
+            pushNotification(buildNotificationForTransaction(charge, "Subscription posted"));
+        });
     }
 
     renderLedger(runtime);
@@ -1160,8 +1794,10 @@ function setupDeviceLedger() {
     setupTransactionInteractions(runtime);
 }
 
+setupOnboardingFlow();
 registerThemeListener();
 registerInstallFlow();
+setupNotificationCenter();
 setupCardPreview();
 setupInteractiveCard();
 setupProfileSettings();
