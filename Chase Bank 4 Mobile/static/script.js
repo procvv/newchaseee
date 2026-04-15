@@ -465,12 +465,14 @@ function setupEditableProfile() {
     const avatar = document.getElementById("profileAvatar");
     const memberSinceValue = document.getElementById("profileMemberSinceValue");
     const autosaveStatus = document.getElementById("profileAutosaveStatus");
+    const saveBadge = document.getElementById("profileSaveBadge");
 
-    if (!seed || !nameInput || !yearInput || !heading || !avatar || !memberSinceValue || !autosaveStatus) {
+    if (!seed || !nameInput || !yearInput || !heading || !avatar || !memberSinceValue || !autosaveStatus || !saveBadge) {
         return;
     }
 
     const state = loadProfileSettings(seed);
+    let saveTimer = null;
 
     function updateProfileDisplay() {
         const trimmedName = state.accountName.trim();
@@ -483,9 +485,16 @@ function setupEditableProfile() {
     }
 
     function persistProfileState(statusMessage) {
+        saveBadge.textContent = "Saving";
+        saveBadge.classList.add("is-saving");
         saveProfileSettings(state);
         updateProfileDisplay();
         autosaveStatus.textContent = statusMessage;
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(() => {
+            saveBadge.textContent = "Saved";
+            saveBadge.classList.remove("is-saving");
+        }, 180);
     }
 
     nameInput.addEventListener("input", () => {
@@ -502,6 +511,7 @@ function setupEditableProfile() {
     nameInput.value = state.accountName;
     yearInput.value = state.memberSince;
     updateProfileDisplay();
+    saveBadge.textContent = "Saved";
 }
 
 function setupFaceIdOverlay() {
@@ -752,6 +762,10 @@ function getTransactionStatus(transaction) {
     return transaction.signedAmount >= 0 ? "Completed deposit" : "Posted charge";
 }
 
+function getTransactionSourceLabel(transaction) {
+    return transaction.seed ? "Bank feed" : "Device activity";
+}
+
 function matchesTransactionFilter(transaction, filterName) {
     if (filterName === "All") {
         return true;
@@ -821,10 +835,21 @@ function renderActivityList(container, transactions, richItems) {
 
 function updateLiveBalanceText(runtime) {
     const liveBalance = getLiveBalance(runtime);
+    const previousBalance = runtime.lastRenderedBalance;
+    const latestTransaction = runtime.state.deviceTransactions[0] || null;
 
     document.querySelectorAll("[data-live-balance]").forEach((element) => {
         element.textContent = formatCurrency(liveBalance);
     });
+
+    if (typeof previousBalance === "number" && previousBalance !== liveBalance) {
+        document.querySelectorAll(".hero-balance").forEach((element) => {
+            element.classList.remove("balance-updated");
+            void element.offsetWidth;
+            element.classList.add("balance-updated");
+            window.setTimeout(() => element.classList.remove("balance-updated"), 320);
+        });
+    }
 
     const activityBadge = document.getElementById("deviceActivityBadge");
     if (activityBadge) {
@@ -835,6 +860,32 @@ function updateLiveBalanceText(runtime) {
     if (activityCopy) {
         activityCopy.textContent = `${runtime.state.deviceId} keeps its own live balance, random charges, and subscription renewals on this browser.`;
     }
+
+    const timestamp = document.getElementById("liveBalanceTimestamp");
+    if (timestamp) {
+        timestamp.textContent = latestTransaction
+            ? `Updated ${formatActivityTime(latestTransaction.timestamp)}`
+            : "Updated just now";
+    }
+
+    const delta = document.getElementById("liveBalanceDelta");
+    if (delta) {
+        if (latestTransaction) {
+            delta.textContent = `${latestTransaction.title} ${formatSignedCurrency(latestTransaction.signedAmount)}`;
+            delta.classList.toggle("is-positive", latestTransaction.signedAmount >= 0);
+            delta.classList.toggle("is-negative", latestTransaction.signedAmount < 0);
+        } else {
+            delta.textContent = "No new charges yet";
+            delta.classList.remove("is-positive", "is-negative");
+        }
+    }
+
+    const liveState = document.getElementById("liveBalanceState");
+    if (liveState) {
+        liveState.textContent = latestTransaction ? "Tracking" : "Live";
+    }
+
+    runtime.lastRenderedBalance = liveBalance;
 }
 
 function renderLedger(runtime) {
@@ -985,6 +1036,14 @@ function ensureTransactionModal() {
                 </div>
                 <button class="secondary-button" type="button" data-transaction-close>Close</button>
             </div>
+            <div class="transaction-detail-hero">
+                <div class="transaction-detail-icon" id="transactionDetailIcon">A</div>
+                <div class="transaction-detail-hero-copy">
+                    <p class="transaction-detail-kicker" id="transactionDetailKicker">Activity</p>
+                    <p class="transaction-detail-amount" id="transactionDetailHeroAmount"></p>
+                    <div class="transaction-detail-badge" id="transactionDetailBadge">Posted</div>
+                </div>
+            </div>
             <div class="detail-list">
                 <div class="detail-row">
                     <span class="detail-label">Description</span>
@@ -1030,6 +1089,10 @@ function openTransactionModal(transaction) {
 
     document.getElementById("transactionDetailTitle").textContent = transaction.title;
     document.getElementById("transactionDetailDescription").textContent = transaction.title;
+    document.getElementById("transactionDetailIcon").textContent = (transaction.category || "A").charAt(0).toUpperCase();
+    document.getElementById("transactionDetailKicker").textContent = getTransactionSourceLabel(transaction);
+    document.getElementById("transactionDetailHeroAmount").textContent = formatSignedCurrency(transaction.signedAmount);
+    document.getElementById("transactionDetailBadge").textContent = `${transaction.category || "Activity"} · ${getTransactionStatus(transaction)}`;
 
     const amountElement = document.getElementById("transactionDetailAmount");
     amountElement.textContent = formatSignedCurrency(transaction.signedAmount);

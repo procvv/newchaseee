@@ -402,6 +402,14 @@ body.face-id-locked {
     z-index: 1;
 }
 
+.hero-label-row,
+.hero-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
 .hero-label {
     margin: 0 0 10px;
     font-size: 13px;
@@ -414,12 +422,35 @@ body.face-id-locked {
     font-size: 42px;
     font-weight: 800;
     letter-spacing: -0.04em;
+    transition: transform 220ms ease, text-shadow 220ms ease;
+}
+
+.hero-balance.balance-updated {
+    transform: translateY(-2px);
+    text-shadow: 0 10px 30px rgba(255, 255, 255, 0.16);
 }
 
 .hero-meta {
     margin: 10px 0 0;
     font-size: 15px;
     opacity: 0.86;
+}
+
+.hero-delta {
+    margin: 10px 0 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    opacity: 0.92;
+    text-align: right;
+}
+
+.hero-delta.is-positive {
+    color: #b7ffd8;
+}
+
+.hero-delta.is-negative {
+    color: #ffe2c3;
 }
 
 .hero-chip {
@@ -434,6 +465,22 @@ body.face-id-locked {
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+}
+
+.hero-chip-stack {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.hero-chip-soft {
+    margin-top: 0;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 11px;
+    letter-spacing: 0.05em;
 }
 
 .card {
@@ -472,6 +519,13 @@ body.face-id-locked {
     letter-spacing: -0.02em;
 }
 
+.section-caption {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
 .section-amount {
     margin: 2px 0 0;
     font-size: 22px;
@@ -489,12 +543,116 @@ body.face-id-locked {
     font-weight: 800;
 }
 
+.profile-header-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.save-pill,
+.live-indicator-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.save-pill {
+    background: rgba(29, 143, 95, 0.12);
+    color: var(--success);
+    transition: transform 180ms ease, opacity 180ms ease, background 180ms ease;
+}
+
+.save-pill.is-saving {
+    background: rgba(11, 86, 179, 0.12);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.live-indicator-pill {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+.live-indicator-pill::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #7ef0b5;
+    box-shadow: 0 0 0 6px rgba(126, 240, 181, 0.14);
+}
+
 .stat-grid,
 .card-editor-grid,
 .action-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+}
+
+.action-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 146px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(242, 246, 252, 0.92));
+    color: var(--text);
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.action-tile:hover,
+.action-tile:focus-visible {
+    transform: translateY(-2px);
+    border-color: rgba(11, 86, 179, 0.26);
+    box-shadow: 0 18px 32px rgba(11, 33, 67, 0.16);
+}
+
+.action-tile-primary {
+    background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.24), transparent 30%),
+        linear-gradient(135deg, #10305b, #0b56b3 72%, #2b7aef);
+    color: #ffffff;
+}
+
+.action-tile-primary .action-tile-copy,
+.action-tile-primary .action-tile-badge {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.action-tile-badge {
+    display: inline-flex;
+    width: fit-content;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(11, 86, 179, 0.1);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.action-tile-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.action-tile-copy {
+    color: var(--muted);
+    line-height: 1.5;
 }
 
 .field-split {
@@ -769,6 +927,16 @@ body.face-id-locked {
     gap: 16px;
     padding: 16px 0;
     border-bottom: 1px solid var(--line);
+    transition: background 180ms ease, border-color 180ms ease, padding 180ms ease, margin 180ms ease;
+}
+
+.settings-item:hover,
+.settings-link:focus-visible {
+    border-color: rgba(11, 86, 179, 0.12);
+    background: rgba(11, 86, 179, 0.04);
+    border-radius: 18px;
+    margin-inline: -10px;
+    padding-inline: 10px;
 }
 
 .settings-item:last-child {
@@ -779,6 +947,17 @@ body.face-id-locked {
 .settings-link {
     color: inherit;
     text-decoration: none;
+}
+
+.settings-link-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-chevron {
+    color: var(--muted);
+    font-weight: 800;
 }
 
 .settings-value {
@@ -935,6 +1114,61 @@ body.transaction-detail-open {
     animation: riseIn 0.24s ease;
 }
 
+.transaction-detail-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: var(--surface-soft);
+}
+
+.transaction-detail-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    background: linear-gradient(160deg, rgba(11, 86, 179, 0.18), rgba(11, 86, 179, 0.08));
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.transaction-detail-hero-copy {
+    flex: 1;
+}
+
+.transaction-detail-kicker {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.transaction-detail-amount {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+.transaction-detail-badge {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(11, 86, 179, 0.1);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
 .wallet-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1073,6 +1307,21 @@ body.transaction-detail-open {
 
     .page-title {
         font-size: 30px;
+    }
+
+    .hero-label-row,
+    .hero-meta-row,
+    .profile-header-side {
+        align-items: flex-start;
+    }
+
+    .hero-label-row,
+    .hero-meta-row {
+        flex-direction: column;
+    }
+
+    .hero-chip-stack {
+        align-items: flex-start;
     }
 
     .hero-balance,

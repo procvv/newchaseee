@@ -36,11 +36,20 @@
 
     <section class="hero-card">
         <div class="hero-copy">
-            <p class="hero-label">Total available</p>
+            <div class="hero-label-row">
+                <p class="hero-label">Total available</p>
+                <span class="live-indicator-pill" id="liveBalanceState">Live</span>
+            </div>
             <div class="hero-balance" data-live-balance>${{ "%.2f"|format(balance) }}</div>
-            <p class="hero-meta">Primary checking ending in 1203</p>
+            <div class="hero-meta-row">
+                <p class="hero-meta">Primary checking ending in 1203</p>
+                <p class="hero-delta" id="liveBalanceDelta">No new charges yet</p>
+            </div>
         </div>
-        <div class="hero-chip">FDIC Insured</div>
+        <div class="hero-chip-stack">
+            <div class="hero-chip">FDIC Insured</div>
+            <div class="hero-chip hero-chip-soft" id="liveBalanceTimestamp">Updated just now</div>
+        </div>
     </section>
 
     <section class="card section-card">
@@ -77,11 +86,23 @@
         </div>
 
         <div class="action-row">
-            <a href="/deposit" class="button cta-link">Deposit check</a>
-            <a href="/add-money" class="button cta-link secondary-cta">Add money</a>
+            <a href="/deposit" class="action-tile action-tile-primary">
+                <span class="action-tile-badge">DEP</span>
+                <span class="action-tile-title">Deposit check</span>
+                <span class="action-tile-copy">Snap a check image and post it fast.</span>
+            </a>
+            <a href="/add-money" class="action-tile">
+                <span class="action-tile-badge">ADD</span>
+                <span class="action-tile-title">Add money</span>
+                <span class="action-tile-copy">Bring funds in from a linked card.</span>
+            </a>
         </div>
         <div class="action-row">
-            <a href="/withdraw" class="button cta-link secondary-cta">Withdraw</a>
+            <a href="/withdraw" class="action-tile">
+                <span class="action-tile-badge">OUT</span>
+                <span class="action-tile-title">Withdraw</span>
+                <span class="action-tile-copy">Send a demo cash out to fake wallets.</span>
+            </a>
             <div class="mini-action">
                 <p class="mini-action-label">Live activity</p>
                 <p class="mini-action-copy">Open Profile to manage saved details and reach transaction tools.</p>
@@ -94,6 +115,7 @@
             <div>
                 <p class="section-label">Recent activity</p>
                 <h2 class="section-title">Latest transactions</h2>
+                <p class="section-caption">Tap a transaction to open richer details.</p>
             </div>
             <a href="/transactions" class="text-link">See all</a>
         </div>
