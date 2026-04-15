@@ -30,12 +30,12 @@
         <form class="stack-form" id="profileSettingsForm">
             <div class="field-group">
                 <label class="field-label" for="profileAccountNameInput">Account name</label>
-                <input id="profileAccountNameInput" type="text" maxlength="32" value="Jordan Banks" required>
+                <input id="profileAccountNameInput" type="text" maxlength="32" value="Jordan Banks" placeholder="No name set">
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="profileMemberSinceInput">Member since</label>
-                <input id="profileMemberSinceInput" type="number" inputmode="numeric" min="1900" max="2099" value="2024" required>
+                <input id="profileMemberSinceInput" type="text" inputmode="numeric" maxlength="4" value="2024" placeholder="----">
             </div>
         </form>
 
@@ -90,27 +90,13 @@
                 </div>
                 <span class="settings-value">Auto</span>
             </div>
-            <div class="settings-item">
+            <a href="/transactions" class="settings-item settings-link">
                 <div>
                     <p class="mini-action-label">App version</p>
-                    <p class="mini-action-copy">Northstar mobile experience for this browser.</p>
+                    <p class="mini-action-copy">Northstar mobile experience for this browser. Tap to open transaction tools.</p>
                 </div>
                 <span class="settings-value">v1.0</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="card section-card">
-        <div class="section-header compact">
-            <div>
-                <p class="section-label">Activity tools</p>
-                <h2 class="section-title">Transactions</h2>
-            </div>
-        </div>
-
-        <a href="/transactions" class="button cta-link secondary-cta">Create / review</a>
-        <div class="info-strip">
-            <p>Open your transaction tools from Profile instead of the home quick actions.</p>
+            </a>
         </div>
     </section>
 {% endblock %}

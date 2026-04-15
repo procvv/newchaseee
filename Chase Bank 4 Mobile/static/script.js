@@ -432,7 +432,7 @@ function getInitials(name) {
         .slice(0, 2);
 
     if (!parts.length) {
-        return "NB";
+        return "--";
     }
 
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
@@ -442,13 +442,13 @@ function loadProfileSettings(seed) {
     try {
         const stored = JSON.parse(localStorage.getItem(profileSettingsKey) || "null");
         return {
-            accountName: stored?.accountName || seed.account_name || "Jordan Banks",
-            memberSince: String(stored?.memberSince || seed.member_since || "2024")
+            accountName: stored?.accountName ?? seed.account_name ?? "Jordan Banks",
+            memberSince: String(stored?.memberSince ?? seed.member_since ?? "2024")
         };
     } catch {
         return {
-            accountName: seed.account_name || "Jordan Banks",
-            memberSince: String(seed.member_since || "2024")
+            accountName: seed.account_name ?? "Jordan Banks",
+            memberSince: String(seed.member_since ?? "2024")
         };
     }
 }
@@ -472,20 +472,19 @@ function setupEditableProfile() {
 
     const state = loadProfileSettings(seed);
 
-    function applyProfileState() {
-        const accountName = state.accountName.trim() || seed.account_name || "Jordan Banks";
-        const memberSince = /^\d{4}$/.test(state.memberSince) ? state.memberSince : String(seed.member_since || "2024");
+    function updateProfileDisplay() {
+        const trimmedName = state.accountName.trim();
+        const displayName = trimmedName || "No name set";
+        const displayYear = /^\d{4}$/.test(state.memberSince) ? state.memberSince : "----";
 
-        nameInput.value = accountName;
-        yearInput.value = memberSince;
-        heading.textContent = accountName;
-        avatar.textContent = getInitials(accountName);
-        memberSinceValue.textContent = memberSince;
+        heading.textContent = displayName;
+        avatar.textContent = getInitials(trimmedName);
+        memberSinceValue.textContent = displayYear;
     }
 
     function persistProfileState(statusMessage) {
         saveProfileSettings(state);
-        applyProfileState();
+        updateProfileDisplay();
         autosaveStatus.textContent = statusMessage;
     }
 
@@ -496,17 +495,13 @@ function setupEditableProfile() {
 
     yearInput.addEventListener("input", () => {
         state.memberSince = yearInput.value.replace(/\D/g, "").slice(0, 4);
+        yearInput.value = state.memberSince;
         persistProfileState("Member since year saved automatically on this device.");
     });
 
-    yearInput.addEventListener("blur", () => {
-        if (!/^\d{4}$/.test(state.memberSince)) {
-            state.memberSince = String(seed.member_since || "2024");
-            persistProfileState("Member since reset to the last valid year.");
-        }
-    });
-
-    applyProfileState();
+    nameInput.value = state.accountName;
+    yearInput.value = state.memberSince;
+    updateProfileDisplay();
 }
 
 function setupFaceIdOverlay() {

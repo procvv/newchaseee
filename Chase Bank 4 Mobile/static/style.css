@@ -776,6 +776,11 @@ body.face-id-locked {
     border-bottom: none;
 }
 
+.settings-link {
+    color: inherit;
+    text-decoration: none;
+}
+
 .settings-value {
     color: var(--muted);
     font-weight: 700;
