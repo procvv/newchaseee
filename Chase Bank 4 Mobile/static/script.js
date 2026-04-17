@@ -1010,11 +1010,26 @@ function getLedgerSeed() {
     }
 }
 
+function getReceiptLedgerSeed() {
+    const seedElement = document.getElementById("receiptLedgerSeed");
+
+    if (!seedElement) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(seedElement.textContent);
+    } catch {
+        return null;
+    }
+}
+
 function createDefaultLedgerState() {
     return {
         version: 1,
         deviceId: buildDeviceId(),
         deviceTransactions: [],
+        appliedReceiptIds: [],
         nextAutoChargeAt: Date.now() + buildAutoChargeIntervalMs()
     };
 }
@@ -1030,6 +1045,7 @@ function loadLedgerState() {
             version: 1,
             deviceId: parsed.deviceId || buildDeviceId(),
             deviceTransactions: Array.isArray(parsed.deviceTransactions) ? parsed.deviceTransactions : [],
+            appliedReceiptIds: Array.isArray(parsed.appliedReceiptIds) ? parsed.appliedReceiptIds : [],
             nextAutoChargeAt: parsed.nextAutoChargeAt || (Date.now() + buildAutoChargeIntervalMs())
         };
     } catch {
@@ -1055,12 +1071,13 @@ function normalizeSeedTransactions(seedTransactions) {
     }));
 }
 
-function createLedgerTransaction({ title, signedAmount, category, timestamp }) {
+function createLedgerTransaction({ id, title, subtitle, signedAmount, category, timestamp }) {
     const txTimestamp = timestamp || Date.now();
 
     return {
-        id: `device-${txTimestamp}-${randomDigits(5)}`,
+        id: id || `device-${txTimestamp}-${randomDigits(5)}`,
         title,
+        subtitle: subtitle || "",
         signedAmount: roundCurrency(signedAmount),
         category,
         timestamp: txTimestamp,
@@ -1214,6 +1231,21 @@ function buildNotificationForTransaction(transaction, overrideTitle) {
         body: `${presentation.chip} ${formatSignedCurrency(transaction.signedAmount)} on ${getTransactionSourceLabel(transaction).toLowerCase()}.`,
         timestamp: transaction.timestamp
     };
+}
+
+function buildReceiptTransaction(seed) {
+    const timestamp = seed.occurred_at ? new Date(seed.occurred_at).getTime() : Date.now();
+    const amount = Math.abs(parseAmount(seed.amount));
+    const isCardFunding = seed.source === "card";
+
+    return createLedgerTransaction({
+        id: `receipt-${seed.receipt_id}`,
+        title: isCardFunding ? "Add money" : "Check deposit",
+        subtitle: formatActivityTime(timestamp),
+        signedAmount: amount,
+        category: "Deposit",
+        timestamp
+    });
 }
 
 function matchesTransactionFilter(transaction, filterName) {
@@ -1794,6 +1826,36 @@ function setupDeviceLedger() {
     setupTransactionInteractions(runtime);
 }
 
+function setupReceiptLedgerSync() {
+    const receiptSeed = getReceiptLedgerSeed();
+
+    if (!receiptSeed || !receiptSeed.receipt_id) {
+        return;
+    }
+
+    const state = loadLedgerState();
+    const receiptId = String(receiptSeed.receipt_id);
+
+    if (state.appliedReceiptIds.includes(receiptId)) {
+        return;
+    }
+
+    const receiptTransaction = buildReceiptTransaction(receiptSeed);
+    state.deviceTransactions.unshift(receiptTransaction);
+    state.appliedReceiptIds.unshift(receiptId);
+
+    if (state.deviceTransactions.length > 60) {
+        state.deviceTransactions = state.deviceTransactions.slice(0, 60);
+    }
+
+    if (state.appliedReceiptIds.length > 40) {
+        state.appliedReceiptIds = state.appliedReceiptIds.slice(0, 40);
+    }
+
+    saveLedgerState(state);
+    pushNotification(buildNotificationForTransaction(receiptTransaction, receiptTransaction.title));
+}
+
 setupOnboardingFlow();
 registerThemeListener();
 registerInstallFlow();
@@ -1803,5 +1865,6 @@ setupInteractiveCard();
 setupProfileSettings();
 setupEditableProfile();
 setupFaceIdOverlay();
+setupReceiptLedgerSync();
 setupDeviceLedger();
 registerServiceWorker();

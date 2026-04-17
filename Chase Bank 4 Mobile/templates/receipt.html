@@ -5,6 +5,15 @@
 {% block page_subtitle %}<p class="page-subtitle">Your transaction was recorded successfully.</p>{% endblock %}
 
 {% block content %}
+    <script id="receiptLedgerSeed" type="application/json">{{ {
+        "receipt_id": tx_id,
+        "amount": amount,
+        "source": source,
+        "occurred_at": occurred_at,
+        "holder_name": holder_name,
+        "last4": last4
+    }|tojson }}</script>
+
     <section class="card receipt-card section-card">
         <div class="receipt-badge">Approved</div>
         <h2 class="receipt-amount">${{ "%.2f"|format(amount) }}</h2>
