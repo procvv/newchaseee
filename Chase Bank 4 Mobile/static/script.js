@@ -10,6 +10,7 @@ const notificationCenterKey = "northstar-notification-center-v1";
 const faceIdEnabledKey = "northstar-face-id-enabled";
 const faceIdUnlockedKey = "northstar-face-id-unlocked";
 let deferredPrompt = null;
+let installFallbackTimer = null;
 const cardThemes = [
     { network: "Aurora", start: "#071a33", mid: "#0c4fa7", end: "#2c7ef0", glow: "rgba(255, 255, 255, 0.26)" },
     { network: "Summit", start: "#231235", mid: "#6c2bd9", end: "#f25d9c", glow: "rgba(255, 210, 236, 0.28)" },
@@ -49,13 +50,14 @@ function syncThemeColor() {
     themeColorMeta.setAttribute("content", darkModeQuery.matches ? "#08111d" : "#f3f7fc");
 }
 
-function showInstallBanner(message, canInstall) {
+function showInstallBanner(message, canInstall, buttonLabel = "Install") {
     if (!installBanner || !installButton || !installHelp) {
         return;
     }
 
     installHelp.textContent = message;
     installButton.disabled = !canInstall;
+    installButton.textContent = buttonLabel;
     installBanner.classList.remove("is-hidden");
 }
 
@@ -70,6 +72,24 @@ function isIosSafari() {
     return isAppleMobile && isSafari;
 }
 
+function isAndroid() {
+    return /Android/i.test(window.navigator.userAgent);
+}
+
+function getAndroidInstallMessage(appName) {
+    return `On Android, open the browser menu and tap Install app or Add to Home screen to save ${appName}.`;
+}
+
+function getIosInstallMessage() {
+    return "On iPhone, tap Share, then Add to Home Screen.";
+}
+
+function showManualInstallSteps(appName) {
+    const message = isAndroid() ? getAndroidInstallMessage(appName) : getIosInstallMessage();
+    showInstallBanner(message, true, "Got it");
+    window.alert(message);
+}
+
 function registerInstallFlow() {
     const appName = document.body.dataset.appName || "this app";
 
@@ -78,16 +98,30 @@ function registerInstallFlow() {
     }
 
     if (isIosSafari()) {
-        showInstallBanner("On iPhone, tap Share, then Add to Home Screen.", false);
+        showInstallBanner(getIosInstallMessage(), true, "How to install");
+    } else if (isAndroid()) {
+        installFallbackTimer = window.setTimeout(() => {
+            if (!deferredPrompt && !isStandalone()) {
+                showInstallBanner(getAndroidInstallMessage(appName), true, "How to install");
+            }
+        }, 1400);
     }
 
     window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
+        if (installFallbackTimer) {
+            window.clearTimeout(installFallbackTimer);
+            installFallbackTimer = null;
+        }
         deferredPrompt = event;
         showInstallBanner(`Install ${appName} for a full-screen home-screen experience.`, true);
     });
 
     window.addEventListener("appinstalled", () => {
+        if (installFallbackTimer) {
+            window.clearTimeout(installFallbackTimer);
+            installFallbackTimer = null;
+        }
         deferredPrompt = null;
         if (installBanner) {
             installBanner.classList.add("is-hidden");
@@ -97,6 +131,7 @@ function registerInstallFlow() {
     if (installButton) {
         installButton.addEventListener("click", async () => {
             if (!deferredPrompt) {
+                showManualInstallSteps(appName);
                 return;
             }
 
