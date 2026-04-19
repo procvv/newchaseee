@@ -61,7 +61,7 @@ def add_money():
         occurred_at = datetime.now().isoformat(timespec="seconds")
         receipt_id = random.randint(100000000000, 999999999999)
         last_declined = request.cookies.get(add_money_decline_cookie) == "1"
-        should_decline = (not last_declined) and random.random() < 0.35
+        should_decline = (not last_declined) and random.random() < 0.55
         status = "declined" if should_decline else "approved"
         response = make_response(redirect(
             f"/receipt?amount={amount}&source=card&last4={card_number[-4:]}&holder_name={holder_name}"
