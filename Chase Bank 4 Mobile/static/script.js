@@ -1868,6 +1868,10 @@ function setupReceiptLedgerSync() {
         return;
     }
 
+    if ((receiptSeed.status || "approved") !== "approved") {
+        return;
+    }
+
     const state = loadLedgerState();
     const receiptId = String(receiptSeed.receipt_id);
 

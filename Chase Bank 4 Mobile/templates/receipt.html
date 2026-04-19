@@ -1,24 +1,27 @@
 {% extends "base.html" %}
 
 {% block title %}Receipt | {{ app_name }}{% endblock %}
-{% block page_title %}Activity submitted{% endblock %}
-{% block page_subtitle %}<p class="page-subtitle">Your transaction was recorded successfully.</p>{% endblock %}
+{% block page_title %}{% if status == 'declined' %}Activity declined{% else %}Activity submitted{% endif %}{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">{% if status == 'declined' %}This add money attempt did not go through.{% else %}Your transaction was recorded successfully.{% endif %}</p>{% endblock %}
 
 {% block content %}
     <script id="receiptLedgerSeed" type="application/json">{{ {
         "receipt_id": tx_id,
         "amount": amount,
         "source": source,
+        "status": status,
         "occurred_at": occurred_at,
         "holder_name": holder_name,
         "last4": last4
     }|tojson }}</script>
 
     <section class="card receipt-card section-card">
-        <div class="receipt-badge">Approved</div>
+        <div class="receipt-badge{% if status == 'declined' %} is-declined{% endif %}">{{ status|title }}</div>
         <h2 class="receipt-amount">${{ "%.2f"|format(amount) }}</h2>
         <p class="receipt-copy">
-            {% if source == 'card' %}
+            {% if source == 'card' and status == 'declined' %}
+                Card ending in {{ last4 }} was declined
+            {% elif source == 'card' %}
                 Added from card ending in {{ last4 }}
             {% else %}
                 Check deposit to checking ending in {{ last4 }}
@@ -28,7 +31,7 @@
         <div class="detail-list">
             <div class="detail-row">
                 <span class="detail-label">Status</span>
-                <span class="detail-value success">Approved</span>
+                <span class="detail-value {% if status == 'declined' %}danger{% else %}success{% endif %}">{{ status|title }}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Type</span>
@@ -48,8 +51,8 @@
             </div>
         </div>
 
-        <div class="info-strip success-strip">
-            <p>This receipt is for proof purposes only.</p>
+        <div class="info-strip {% if status == 'declined' %}warning-strip{% else %}success-strip{% endif %}">
+            <p>{% if status == 'declined' %}No funds were added to this device balance.{% else %}This receipt is for proof purposes only.{% endif %}</p>
         </div>
         <a href="/" class="button cta-link">Done</a>
     </section>

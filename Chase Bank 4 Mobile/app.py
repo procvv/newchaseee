@@ -2,7 +2,7 @@ import os
 import random
 from datetime import datetime
 
-from flask import Flask, redirect, render_template, request, send_from_directory
+from flask import Flask, make_response, redirect, render_template, request, send_from_directory
 
 app = Flask(__name__)
 
@@ -10,6 +10,7 @@ starting_balance = 0.00
 starting_transactions = []
 app_name = "Northstar Bank"
 withdraw_providers = ["Cash App", "Venmo", "Apple Pay"]
+add_money_decline_cookie = "northstar_add_money_last_declined"
 
 @app.route("/")
 def home():
@@ -59,10 +60,20 @@ def add_money():
 
         occurred_at = datetime.now().isoformat(timespec="seconds")
         receipt_id = random.randint(100000000000, 999999999999)
-        return redirect(
+        last_declined = request.cookies.get(add_money_decline_cookie) == "1"
+        should_decline = (not last_declined) and random.random() < 0.35
+        status = "declined" if should_decline else "approved"
+        response = make_response(redirect(
             f"/receipt?amount={amount}&source=card&last4={card_number[-4:]}&holder_name={holder_name}"
-            f"&receipt_id={receipt_id}&occurred_at={occurred_at}"
+            f"&receipt_id={receipt_id}&occurred_at={occurred_at}&status={status}"
+        ))
+        response.set_cookie(
+            add_money_decline_cookie,
+            "1" if should_decline else "0",
+            max_age=60 * 60 * 24 * 365,
+            samesite="Lax"
         )
+        return response
 
     return render_template("add_money.html", active_page="accounts", app_name=app_name, error=None, form_data={})
 
@@ -75,6 +86,9 @@ def receipt():
     tx_id = request.args.get("receipt_id") or random.randint(100000000000, 999999999999)
     source = request.args.get("source", "deposit")
     holder_name = request.args.get("holder_name", "Holder Name ")
+    status = request.args.get("status", "approved").lower()
+    if status not in {"approved", "declined"}:
+        status = "approved"
 
     return render_template("receipt.html",
                            amount=amount,
@@ -84,6 +98,7 @@ def receipt():
                            tx_id=tx_id,
                            source=source,
                            holder_name=holder_name,
+                           status=status,
                            active_page="accounts",
                            app_name=app_name)
 

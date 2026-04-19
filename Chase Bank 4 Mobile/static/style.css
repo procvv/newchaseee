@@ -1288,6 +1288,11 @@ select:focus {
     text-transform: uppercase;
 }
 
+.receipt-badge.is-declined {
+    background: rgba(189, 73, 73, 0.12);
+    color: #c54545;
+}
+
 .receipt-amount {
     margin: 4px 0 0;
     font-size: 38px;
@@ -1321,6 +1326,14 @@ select:focus {
 
 .success-strip {
     background: var(--positive-bg);
+}
+
+.warning-strip {
+    background: rgba(189, 73, 73, 0.12);
+}
+
+.detail-value.danger {
+    color: #c54545;
 }
 
 body.transaction-detail-open {
