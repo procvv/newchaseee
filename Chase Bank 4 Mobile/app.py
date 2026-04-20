@@ -1,6 +1,6 @@
 import os
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Flask, make_response, redirect, render_template, request, send_from_directory
 
@@ -11,6 +11,10 @@ starting_transactions = []
 app_name = "Northstar Bank"
 withdraw_providers = ["Cash App", "Venmo", "Apple Pay"]
 add_money_decline_cookie = "northstar_add_money_last_declined"
+
+
+def build_timestamp():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 @app.route("/")
 def home():
@@ -34,7 +38,7 @@ def deposit():
                 error="Add a check photo to continue.",
                 form_data=request.form
             )
-        occurred_at = datetime.now().isoformat(timespec="seconds")
+        occurred_at = build_timestamp()
         receipt_id = random.randint(100000000000, 999999999999)
         return redirect(f"/receipt?amount={amount}&source=check&receipt_id={receipt_id}&occurred_at={occurred_at}")
     return render_template("deposit.html", active_page="accounts", app_name=app_name, error=None, form_data={})
@@ -58,7 +62,7 @@ def add_money():
                 form_data=request.form
             )
 
-        occurred_at = datetime.now().isoformat(timespec="seconds")
+        occurred_at = build_timestamp()
         receipt_id = random.randint(100000000000, 999999999999)
         last_declined = request.cookies.get(add_money_decline_cookie) == "1"
         should_decline = (not last_declined) and random.random() < 0.55
@@ -81,7 +85,7 @@ def add_money():
 def receipt():
     amount = float(request.args.get("amount"))
     occurred_at = request.args.get("occurred_at")
-    now = datetime.fromisoformat(occurred_at) if occurred_at else datetime.now()
+    now = datetime.fromisoformat(occurred_at.replace("Z", "+00:00")) if occurred_at else datetime.now(timezone.utc)
     last4 = request.args.get("last4") or random.randint(1000, 9999)
     tx_id = request.args.get("receipt_id") or random.randint(100000000000, 999999999999)
     source = request.args.get("source", "deposit")
@@ -92,8 +96,8 @@ def receipt():
 
     return render_template("receipt.html",
                            amount=amount,
-                           date=now.strftime("%m/%d/%Y %H:%M"),
-                           occurred_at=now.isoformat(timespec="seconds"),
+                           date=now.strftime("%m/%d/%Y %H:%M UTC"),
+                           occurred_at=now.isoformat(timespec="seconds").replace("+00:00", "Z"),
                            last4=last4,
                            tx_id=tx_id,
                            source=source,

@@ -39,7 +39,7 @@
             </div>
             <div class="detail-row">
                 <span class="detail-label">Date</span>
-                <span class="detail-value">{{ date }}</span>
+                <span class="detail-value" id="receiptDateValue" data-receipt-time="{{ occurred_at }}">{{ date }}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">{% if source == 'card' %}Cardholder{% else %}Account{% endif %}</span>

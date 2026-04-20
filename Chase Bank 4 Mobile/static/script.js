@@ -1203,6 +1203,31 @@ function formatActivityTime(timestamp) {
     return `${shortDate}, ${time}`;
 }
 
+function formatReceiptDateTime(value) {
+    if (!value) {
+        return null;
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    const formatted = new Intl.DateTimeFormat("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+    }).format(date);
+
+    const zone = new Intl.DateTimeFormat("en-US", { timeZoneName: "short" })
+        .formatToParts(date)
+        .find((part) => part.type === "timeZoneName")?.value;
+
+    return zone ? `${formatted} ${zone}` : formatted;
+}
+
 function getMergedTransactions(runtime) {
     const deviceTransactions = [...runtime.state.deviceTransactions].sort((left, right) => right.timestamp - left.timestamp);
     return [...deviceTransactions, ...runtime.seed.transactions];
@@ -1895,6 +1920,21 @@ function setupReceiptLedgerSync() {
     pushNotification(buildNotificationForTransaction(receiptTransaction, receiptTransaction.title));
 }
 
+function setupReceiptTimestamp() {
+    const receiptDate = document.getElementById("receiptDateValue");
+
+    if (!receiptDate) {
+        return;
+    }
+
+    const occurredAt = receiptDate.dataset.receiptTime;
+    const localValue = formatReceiptDateTime(occurredAt);
+
+    if (localValue) {
+        receiptDate.textContent = localValue;
+    }
+}
+
 setupOnboardingFlow();
 registerThemeListener();
 registerInstallFlow();
@@ -1905,5 +1945,6 @@ setupProfileSettings();
 setupEditableProfile();
 setupFaceIdOverlay();
 setupReceiptLedgerSync();
+setupReceiptTimestamp();
 setupDeviceLedger();
 registerServiceWorker();
